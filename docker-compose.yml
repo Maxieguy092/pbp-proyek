@@ -1,11 +1,17 @@
-version: "3.9"
-
 services:
   backend:
     build: ./backend
     container_name: pbp-backend
     ports:
-      - "8080:8080"
+      - "5000:5000"
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=example
+      - DB_NAME=pbpdb
 
   frontend:
     build: ./frontend
@@ -14,3 +20,20 @@ services:
       - "3000:80"
     depends_on:
       - backend
+
+  db:
+    image: mysql:8.0
+    container_name: pbp-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: pbpdb
+      MYSQL_USER: pbpuser
+      MYSQL_PASSWORD: pbppass
+    ports:
+      - "3307:3306"   # expose on host so you can connect from outside
+    volumes:
+      - db_data:/var/lib/mysql
+
+volumes:
+  db_data:
