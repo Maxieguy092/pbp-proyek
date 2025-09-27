@@ -1,0 +1,16 @@
+version: "3.9"
+
+services:
+  backend:
+    build: ./backend
+    container_name: pbp-backend
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build: ./frontend
+    container_name: pbp-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend

@@ -1,0 +1,22 @@
+# Build stage
+FROM golang:1.23-alpine AS build
+
+WORKDIR /app
+
+# Only copy go.mod for now (since go.sum doesn't exist yet)
+COPY go.mod ./
+
+# Copy the source code
+COPY . .
+
+# Build the Go app
+RUN go build -o server .
+
+# Run stage
+FROM alpine:latest
+
+WORKDIR /app
+
+COPY --from=build /app/server .
+
+CMD ["./server"]
