@@ -9,10 +9,10 @@ services:
     environment:
       - DB_HOST=db
       - DB_PORT=3306
-      - DB_USER=root
-      - DB_PASSWORD=example
+      - DB_USER=pbpuser
+      - DB_PASSWORD=pbppass
       - DB_NAME=pbpdb
-
+    
   frontend:
     build: ./frontend
     container_name: pbp-frontend

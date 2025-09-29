@@ -1,9 +1,10 @@
 package main
 
 import (
-	"encoding/json"
-	"net/http"
-	"os"
+	db "github.com/Maxiegame092/pbp-app/DB"
+	"github.com/Maxiegame092/pbp-app/routes"
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 )
 
 type User struct {
@@ -12,23 +13,12 @@ type User struct {
 }
 
 func main() {
-	// Example handler
-	http.HandleFunc("/api/users", func(w http.ResponseWriter, r *http.Request) {
-		users := []User{
-			{ID: 1, Name: "Alice"},
-			{ID: 2, Name: "Bob"},
-		}
+	db.InitDB()
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(users)
-	})
+	r := gin.Default()
+	cors.Default()
 
-	// Get port from env or fallback to 5000
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "5000"
-	}
+	routes.SetupRoutes(r)
 
-	println("Backend running at http://localhost:" + port)
-	http.ListenAndServe(":"+port, nil)
+	r.Run(":5000")
 }
