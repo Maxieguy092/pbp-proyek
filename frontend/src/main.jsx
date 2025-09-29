@@ -19,6 +19,7 @@ import ProductDetailPage from "./components/pages/ProductDetailPage.jsx";
 import AdminHome from "./components/pages/admin/AdminHome.jsx";
 import ProductManagementList from "./components/pages/admin/ProductManagementList.jsx";
 import ProductForm from "./components/pages/admin/ProductForm.jsx";
+import OrderManagement from "./components/pages/admin/OrderManagement.jsx";
 
 const router = createBrowserRouter([
   { path: "/", element: <HomePage /> },
@@ -39,10 +40,11 @@ const router = createBrowserRouter([
     ],
   },
   { path: "/products/:id", element: <ProductDetailPage /> },
-  { path: "/admin", element: <AdminHome /> },
+  { path: "/admin/dashboard", element: <AdminHome /> },
   { path: "/admin/products", element: <ProductManagementList /> },
   { path: "/admin/products/new", element: <ProductForm /> },
   { path: "/admin/products/:id/edit", element: <ProductForm /> },
+  { path: "/admin/orders", element: <OrderManagement /> },
 ]);
 
 createRoot(document.getElementById("root")).render(

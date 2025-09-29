@@ -54,7 +54,10 @@ export default function CartDrawer({ open, onClose }) {
                     {it.qty}
                   </span>
                   <button
-                    onClick={() => increment(it.id)}
+                    onClick={() => {
+                      const max = it.stock ?? 99;
+                      if (it.qty < max) increment(it.id, it.variant);
+                    }}
                     className="px-3 py-2 hover:bg-[#e1eac4]"
                     aria-label="Tambah"
                   >

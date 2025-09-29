@@ -44,16 +44,53 @@ export default function CheckoutPage() {
             <section>
               <h2 className="text-xl font-semibold mb-4">Delivery</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <input className="input" placeholder="First Name" />
-                <input className="input" placeholder="Last Name" />
+                <input
+                  name="firstName"
+                  type="text"
+                  required
+                  placeholder="First Name"
+                  className="input"
+                />
+                <input
+                  name="lastName"
+                  type="text"
+                  required
+                  placeholder="First Name"
+                  className="input"
+                />
               </div>
               <div className="mt-4 space-y-4">
-                <input className="input" placeholder="Adress" />
-                <input className="input" placeholder="District" />
-                <input className="input" placeholder="City" />
+                <input
+                  name="address"
+                  type="text"
+                  required
+                  placeholder="Address"
+                  className="input"
+                />
+                <input
+                  name="district"
+                  type="text"
+                  required
+                  placeholder="District"
+                  className="input"
+                />
+                <input
+                  name="city"
+                  type="text"
+                  required
+                  placeholder="City"
+                  className="input"
+                />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <input className="input" placeholder="State" />
-                  <input className="input" placeholder="Zip Code" />
+                  <input
+                    name="zip"
+                    type="text"
+                    pattern="\\d{5}"
+                    required
+                    placeholder="Zip Code (5 digits)"
+                    className="input"
+                  />
                 </div>
               </div>
             </section>
@@ -63,8 +100,20 @@ export default function CheckoutPage() {
                 Contact Information
               </h2>
               <div className="space-y-4">
-                <input className="input" type="email" placeholder="Email" />
-                <input className="input" placeholder="Phone Number" />
+                <input
+                  type="email"
+                  name="email"
+                  required
+                  placeholder="Email"
+                  className="input"
+                />
+                <input
+                  name="phone"
+                  className="input"
+                  required
+                  pattern="^\+?\d{9,15}$"
+                  placeholder="Phone Number (+628...)"
+                />
               </div>
             </section>
 

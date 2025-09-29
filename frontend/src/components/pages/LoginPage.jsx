@@ -22,16 +22,19 @@ export default function LoginPage() {
 
             <form onSubmit={onSubmit} className="mt-6 space-y-4">
               <input
+                name="email"
                 type="email"
+                required
                 placeholder="e-mail"
                 className="w-full rounded-xl border border-[#e5e8d2] bg-[#fbfcee] px-4 py-3 outline-none focus:border-[#3971b8] transition"
-                required
               />
               <input
+                name="password"
                 type="password"
+                required
+                minLength={6}
                 placeholder="password"
                 className="w-full rounded-xl border border-[#e5e8d2] bg-[#fbfcee] px-4 py-3 outline-none focus:border-[#3971b8] transition"
-                required
               />
               <div className="pt-2 flex justify-center">
                 <Button type="submit" className="w-[140px] text-center">

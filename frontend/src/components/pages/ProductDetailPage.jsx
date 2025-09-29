@@ -11,6 +11,7 @@ const MOCK_PRODUCTS = {
     id: "baju-001",
     name: "Baju Baju – Warna",
     price: 999000,
+    stock: 7,
     sizes: ["S", "M", "L"],
     description:
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
@@ -22,15 +23,25 @@ export default function ProductDetailPage() {
   const { id } = useParams();
   const product = MOCK_PRODUCTS[id] ?? MOCK_PRODUCTS["baju-001"]; // fallback demo
   const { addToCart } = useCart();
-
-  const [size, setSize] = useState(product.sizes[0]);
+  const maxQty = product.stock ?? 10;
   const [qty, setQty] = useState(1);
+  const [size, setSize] = useState(product.sizes?.[0] ?? null);
+  const [err, setErr] = useState("");
 
   const add = () => {
+    if (product.sizes?.length && !size) {
+      setErr("Please choose size");
+      return;
+    }
+    if (qty < 1 || qty > maxQty) {
+      setErr(`Qty must be 1–${maxQty}`);
+      return;
+    }
+    setErr("");
     addToCart({
       id: product.id,
       name: product.name,
-      variant: size,
+      variant: size ?? "-",
       price: product.price,
       qty,
       image: null,
@@ -90,7 +101,7 @@ export default function ProductDetailPage() {
                 {qty}
               </span>
               <button
-                onClick={() => setQty(qty + 1)}
+                onClick={() => setQty(Math.min(maxQty, qty + 1))}
                 className="px-4 py-2 hover:bg-[#e1eac4]"
               >
                 +
