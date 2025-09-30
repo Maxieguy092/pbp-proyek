@@ -1,0 +1,35 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+.header {
+  background-color: #C8D69B; 
+  height: 45px;
+  width: 100%;
+  display: flex;             /* flexbox aktif */
+  align-items: center;       /* biar sejajar vertikal */
+  justify-content: space-between; /* kiri - tengah - kanan */
+  padding: 0 20px;           /* kasih jarak kiri kanan */
+  box-sizing: border-box;
+}
+
+.header-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.1rem; 
+  font-weight: 700;
+  color: #3971B8; 
+  margin: 0;
+}
+
+.header-left, .header-right {
+  display: flex;
+  align-items: center;
+  gap: 30px; /* jarak antar ikon lebih lebar */
+}
+
+.icon {
+  width: 16px;   /* lebih kecil dari sebelumnya */
+  height: 16px;
+  cursor: pointer;
+}

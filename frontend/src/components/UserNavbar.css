@@ -1,0 +1,29 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
+
+.navbar {
+  background-color: #FBFCEE;
+  padding: 15px 0;
+  display: flex;
+  justify-content: center;
+  font-family: 'Poppins', sans-serif;
+  border-bottom: 1px solid #3971B8; /* garis biru bawah */
+}
+
+.nav-menu {
+  list-style: none;
+  display: flex;
+  gap: 70px;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-menu li {
+  color: #3971B8;
+  cursor: pointer;
+  transition: color 0.3s ease;
+  font-size: 13px; /* ukuran kecil */
+}
+
+.nav-menu li:hover {
+  color: #285187; /* lebih gelap saat hover */
+}
