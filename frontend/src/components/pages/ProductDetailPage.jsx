@@ -1,99 +1,147 @@
 // ==================================================
 // 📁 src/components/pages/ProductDetailPage.jsx
 // ==================================================
-import { useParams } from "react-router-dom";
-import { useState } from "react";
+import { useParams, Link } from "react-router-dom";
+import { useState, useMemo } from "react";
 import MainLayout from "../templates/MainLayout/MainLayout";
-import { useCart, formatIDR } from "../../contexts/CartContext";
+import { getProductById } from "../../data/catalog";
+import { useCart } from "../../contexts/CartContext";
 
-const MOCK_PRODUCTS = {
-  "baju-001": {
-    id: "baju-001",
-    name: "Baju Baju – Warna",
-    price: 999000,
-    stock: 7,
-    sizes: ["S", "M", "L"],
-    description:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-    images: [1, 2, 3, 4], // placeholder 4 kotak
-  },
-};
+// Formatter IDR
+const formatIDR = (n) =>
+  new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0,
+  }).format(n);
+
+const FALLBACK_IMG = "../../images/fallback.jpg";
 
 export default function ProductDetailPage() {
   const { id } = useParams();
-  const product = MOCK_PRODUCTS[id] ?? MOCK_PRODUCTS["baju-001"]; // fallback demo
-  const { addToCart } = useCart();
-  const maxQty = product.stock ?? 10;
-  const [qty, setQty] = useState(1);
-  const [size, setSize] = useState(product.sizes?.[0] ?? null);
-  const [err, setErr] = useState("");
+  const product = useMemo(() => getProductById(id), [id]);
 
-  const add = () => {
+  const [qty, setQty] = useState(1);
+  const [size, setSize] = useState(product?.sizes?.[0] ?? null);
+
+  if (!product) {
+    return (
+      <MainLayout>
+        <div className="mx-auto max-w-7xl px-4 py-14 text-center">
+          <h1 className="text-2xl font-semibold">Produk tidak ditemukan</h1>
+          <p className="mt-2 text-gray-600">
+            Mungkin ID salah atau produk sudah tidak tersedia.
+          </p>
+          <Link to="/" className="inline-block mt-6 underline">
+            Kembali ke beranda
+          </Link>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  // stok & kondisi
+  const maxQty = Number.isFinite(product?.stock) ? product.stock : 10;
+  const outOfStock = maxQty <= 0;
+
+  // Galeri gambar: pakai images[] kalau ada, fallback ke imageUrl
+  const gallery = product.images?.length
+    ? product.images
+    : [product.imageUrl].filter(Boolean);
+
+  const { add } = useCart();
+
+  const onAddToCart = () => {
+    if (outOfStock) {
+      alert("Stok habis");
+      return;
+    }
     if (product.sizes?.length && !size) {
-      setErr("Please choose size");
+      alert("Pilih size dulu ya");
       return;
     }
     if (qty < 1 || qty > maxQty) {
-      setErr(`Qty must be 1–${maxQty}`);
+      alert(`Qty harus 1–${maxQty}`);
       return;
     }
-    setErr("");
-    addToCart({
-      id: product.id,
-      name: product.name,
-      variant: size ?? "-",
-      price: product.price,
-      qty,
-      image: null,
-    });
+
+    add(product, qty, size);
+
+    alert("Ditambahkan ke keranjang (demo)");
   };
 
   return (
     <MainLayout>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* kiri: 4 gambar */}
+          {/* Kiri: Galeri */}
           <div className="grid grid-cols-2 gap-6">
-            {product.images.map((k) => (
+            {gallery.map((src, idx) => (
               <div
-                key={k}
-                className="aspect-[1/1] rounded-2xl bg-[#d9d9d9] border border-[#e8e8e8]"
-              />
+                key={idx}
+                className="aspect-[1/1] rounded-2xl overflow-hidden bg-[#f2f2f2] border border-[#e8e8e8]"
+              >
+                <img
+                  src={src}
+                  alt={`${product.name} ${idx + 1}`}
+                  className="h-full w-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.src = FALLBACK_IMG;
+                  }}
+                />
+              </div>
             ))}
           </div>
 
-          {/* kanan: detail */}
+          {/* Kanan: Detail */}
           <div>
             <h1 className="text-3xl font-semibold text-[#2b2b2b]">
               {product.name}
             </h1>
-            <p className="mt-2 text-[#3971b8] font-medium">
+
+            <p className="mt-2 text-xl text-[#3971b8] font-medium">
               {formatIDR(product.price)}
             </p>
 
-            <div className="mt-6">
-              <p className="text-sm text-[#2b2b2b] mb-2">Size</p>
-              <div className="flex gap-2">
-                {product.sizes.map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => setSize(s)}
-                    className={`px-3 py-2 rounded-lg border ${
-                      size === s
-                        ? "bg-[#e1eac4] border-[#c8d69b]"
-                        : "border-[#d3e0a9]"
-                    }`}
-                  >
-                    {s}
-                  </button>
-                ))}
+            {/* Size (opsional) */}
+            {product.sizes?.length ? (
+              <div className="mt-6">
+                <p className="text-sm text-[#2b2b2b] mb-2">Size</p>
+                <div className="flex gap-2 flex-wrap">
+                  {product.sizes.map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => setSize(s)}
+                      className={`px-3 py-2 rounded-lg border ${
+                        size === s
+                          ? "bg-[#e1eac4] border-[#c8d69b]"
+                          : "border-[#d3e0a9]"
+                      }`}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            ) : null}
 
-            <div className="mt-6 inline-flex items-center border border-[#d3e0a9] rounded-lg overflow-hidden">
+            {/* Stok */}
+            {Number.isFinite(product.stock) && (
+              <p className="mt-6 italic font-semibold text-sm text-gray-600">
+                {outOfStock ? "Stok habis" : `Stok: ${product.stock}`}
+              </p>
+            )}
+
+            {/* Qty */}
+            <div className="mt-2 inline-flex items-center border border-[#d3e0a9] rounded-lg overflow-hidden">
               <button
-                onClick={() => setQty(Math.max(1, qty - 1))}
-                className="px-4 py-2 hover:bg-[#e1eac4]"
+                onClick={() => setQty((q) => Math.max(1, q - 1))}
+                disabled={outOfStock}
+                className={`px-4 py-2 ${
+                  outOfStock
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:bg-[#e1eac4]"
+                }`}
               >
                 -
               </button>
@@ -101,30 +149,50 @@ export default function ProductDetailPage() {
                 {qty}
               </span>
               <button
-                onClick={() => setQty(Math.min(maxQty, qty + 1))}
-                className="px-4 py-2 hover:bg-[#e1eac4]"
+                onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
+                disabled={outOfStock || qty >= maxQty}
+                className={`px-4 py-2 ${
+                  outOfStock || qty >= maxQty
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:bg-[#e1eac4]"
+                }`}
               >
                 +
               </button>
             </div>
 
+            {!outOfStock && (
+              <p className="text-xs text-gray-500 mt-2">
+                Maksimal {maxQty} per pesanan.
+              </p>
+            )}
+
+            {/* CTA */}
             <div className="mt-6">
               <button
-                onClick={add}
-                className="w-full sm:w-64 rounded-xl px-6 py-3 font-medium transition bg-[#3971b8] text-[#fbfcee] hover:opacity-95 active:scale-[.99]"
+                onClick={onAddToCart}
+                disabled={outOfStock}
+                className={`w-full sm:w-64 rounded-xl px-6 py-3 font-medium transition ${
+                  outOfStock
+                    ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                    : "bg-[#3971b8] text-[#fbfcee] hover:opacity-95 active:scale-[.99]"
+                }`}
               >
-                Add to cart
+                {outOfStock ? "Stok Habis" : "Add to cart"}
               </button>
             </div>
 
-            <div className="mt-8">
-              <h2 className="text-sm font-semibold text-[#2b2b2b] mb-2">
-                Description
-              </h2>
-              <p className="max-w-prose text-[#2b2b2b]/80 leading-relaxed">
-                {product.description}
-              </p>
-            </div>
+            {/* Deskripsi (opsional) */}
+            {product.description ? (
+              <div className="mt-8">
+                <h2 className="text-sm font-semibold text-[#2b2b2b] mb-2">
+                  Description
+                </h2>
+                <p className="max-w-prose text-[#2b2b2b]/80 leading-relaxed">
+                  {product.description}
+                </p>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>

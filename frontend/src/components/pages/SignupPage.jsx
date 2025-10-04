@@ -25,7 +25,7 @@ export default function SignupPage() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <section className="min-h-[70vh] flex items-center justify-center">
           <div className="w-full max-w-xl">
-            <h1 className="text-center text-3xl sm:text-4xl font-semibold">
+            <h1 className="mt-5 text-center text-3xl sm:text-4xl font-semibold">
               Sign Up
             </h1>
             <p className="mt-2 text-center text-sm sm:text-base">
