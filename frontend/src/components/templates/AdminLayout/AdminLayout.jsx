@@ -16,12 +16,22 @@ export default function AdminLayout({ children }) {
           <ul className="flex justify-center items-center gap-10 py-3 text-sm sm:text-base text-[#3971b8]">
             <li>
               <NavLink
-                to="/admin"
+                to="/admin/dashboard"
                 className={({ isActive }) =>
                   isActive ? "underline font-medium" : "hover:opacity-90"
                 }
               >
                 Dashboard
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/admin/orders"
+                className={({ isActive }) =>
+                  isActive ? "underline font-medium" : "hover:opacity-90"
+                }
+              >
+                Order Management
               </NavLink>
             </li>
             <li>

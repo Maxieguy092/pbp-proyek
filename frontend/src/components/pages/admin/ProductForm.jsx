@@ -69,8 +69,9 @@ export default function ProductForm() {
             <input
               value={form.name}
               onChange={set("name")}
+              required
               className="w-full rounded-xl border border-[#e5e8d2] bg-[#fbfcee] px-4 py-3 outline-none focus:border-[#3971b8]"
-              placeholder=""
+              placeholder="Nama Produk"
             />
           </section>
 
@@ -81,6 +82,7 @@ export default function ProductForm() {
               <select
                 value={form.category}
                 onChange={set("category")}
+                required
                 className="w-full rounded-xl border border-[#e5e8d2] bg-[#fbfcee] px-4 py-3 outline-none focus:border-[#3971b8]"
               >
                 <option value="">— Choose —</option>

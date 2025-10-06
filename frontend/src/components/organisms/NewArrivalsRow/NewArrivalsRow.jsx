@@ -1,4 +1,11 @@
+// src/components/organisms/NewArrivalsRow/NewArrivalsRow.jsx
+import ProductCard from "../../molecules/ProductCard/ProductCard";
+import { allProducts, shuffle } from "../../../data/catalog";
+
 export default function NewArrivalsRow() {
+  // contoh: random 5 item dari semua kategori
+  const arrivals = shuffle(allProducts).slice(0, 5);
+
   return (
     <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
       <div className="text-center mb-6">
@@ -8,12 +15,10 @@ export default function NewArrivalsRow() {
           harianmu.
         </p>
       </div>
+
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div
-            key={i}
-            className="aspect-square rounded-2xl bg-[#d9d9d9] shadow-sm border border-[#e8e8e8]"
-          />
+        {arrivals.map((p) => (
+          <ProductCard key={p.id} {...p} to={`/products/${p.id}`} />
         ))}
       </div>
     </section>
