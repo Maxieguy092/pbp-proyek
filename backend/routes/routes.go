@@ -14,6 +14,10 @@ func SetupRoutes(r *gin.Engine) {
 		api.POST("/register", func(c *gin.Context) {
 			controllers.Register(c.Writer, c.Request)
 		})
+		api.POST("/logout", controllers.Logout)
+		api.GET("/me", func(c *gin.Context) {
+			controllers.CheckSession(c.Writer, c.Request)
+		})
 	}
 
 }

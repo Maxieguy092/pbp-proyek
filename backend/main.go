@@ -1,6 +1,8 @@
 package main
 
 import (
+	"time"
+
 	db "github.com/Maxiegame092/pbp-app/DB"
 	"github.com/Maxiegame092/pbp-app/routes"
 	"github.com/gin-contrib/cors"
@@ -16,7 +18,14 @@ func main() {
 	db.InitDB()
 
 	r := gin.Default()
-	cors.Default()
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:3000"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
 
 	routes.SetupRoutes(r)
 

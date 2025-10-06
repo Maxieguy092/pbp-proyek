@@ -1,11 +1,50 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import MainLayout from "../templates/MainLayout/MainLayout";
 import Button from "../atoms/Button/Button";
+import { useEffect } from "react";
+
 
 export default function LoginPage() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    fetch("http://localhost:5000/api/me", {
+      method: "GET",
+      credentials: "include", 
+    })
+      .then((res) => {
+        if (res.ok) {
+          window.location.href = "/dashboard/profile"; 
+        }
+      })
+      .catch((err) => {
+        console.error("Session check failed:", err);
+      });
+  }, []);
+
   const onSubmit = (e) => {
     e.preventDefault();
-    // TODO: call API login lu di sini
+    const username = e.target.email.value;
+    const password = e.target.password.value;  
+
+    fetch("http://localhost:5000/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ username, password }),
+    }).then((res) => {
+        if (!res.ok) throw new Error("Login failed");
+        return res.json();
+      })
+      .then((data) => {
+        console.log("Logged in:", data);
+        window.location.href = "/dashboard/profile";
+      })
+      .catch((err) => {
+        console.error("Error:", err);
+      });
+
+    
   };
 
   return (
@@ -44,7 +83,7 @@ export default function LoginPage() {
             </form>
 
             <p className="mt-4 text-center text-sm sm:text-base">
-              Don’t have an account?{" "}
+              Don't have an account?{" "}
               <Link to="/signup" className="underline hover:opacity-90">
                 Sign Up
               </Link>
