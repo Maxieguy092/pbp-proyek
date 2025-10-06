@@ -8,7 +8,12 @@ import (
 func SetupRoutes(r *gin.Engine) {
 	api := r.Group("/api")
 	{
-		api.POST("/register", controllers.Register)
-		api.POST("/login", controllers.Login)
+		api.POST("/login", func(c *gin.Context) {
+			controllers.Login(c.Writer, c.Request)
+		})
+		api.POST("/register", func(c *gin.Context) {
+			controllers.Register(c.Writer, c.Request)
+		})
 	}
+
 }
