@@ -1,11 +1,11 @@
 // ==================================================
-// 📁 src/components/pages/ProductDetailPage.jsx
+// 📁 File: src/components/pages/ProductDetailPage.jsx
 // ==================================================
 import { useParams, Link } from "react-router-dom";
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import MainLayout from "../templates/MainLayout/MainLayout";
-import { getProductById } from "../../data/catalog";
 import { useCart } from "../../contexts/CartContext";
+import { fetchProductById } from "../../api/products";
 
 // Formatter IDR
 const formatIDR = (n) =>
@@ -15,14 +15,51 @@ const formatIDR = (n) =>
     maximumFractionDigits: 0,
   }).format(n);
 
-const FALLBACK_IMG = "../../images/fallback.jpg";
+const FALLBACK_IMG = "/images/fallback.jpg";
 
 export default function ProductDetailPage() {
   const { id } = useParams();
-  const product = useMemo(() => getProductById(id), [id]);
+  const { add } = useCart();
 
+  // --- data state ---
+  const [loading, setLoading] = useState(true);
+  const [product, setProduct] = useState(null);
+
+  // --- ui state ---
   const [qty, setQty] = useState(1);
-  const [size, setSize] = useState(product?.sizes?.[0] ?? null);
+  const [size, setSize] = useState(null);
+
+  // fetch product dari backend
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    fetchProductById(id)
+      .then((p) => {
+        if (!alive) return;
+        setProduct(p);
+        // default size kalo ada
+        setSize(p?.sizes?.[0] ?? null);
+      })
+      .catch(() => {
+        if (!alive) return;
+        setProduct(null);
+      })
+      .finally(() => alive && setLoading(false));
+    return () => {
+      alive = false;
+    };
+  }, [id]);
+
+  // guard
+  if (loading) {
+    return (
+      <MainLayout>
+        <div className="mx-auto max-w-7xl px-4 py-14 text-center">
+          <h1 className="text-2xl font-semibold">Memuat produk…</h1>
+        </div>
+      </MainLayout>
+    );
+  }
 
   if (!product) {
     return (
@@ -44,12 +81,10 @@ export default function ProductDetailPage() {
   const maxQty = Number.isFinite(product?.stock) ? product.stock : 10;
   const outOfStock = maxQty <= 0;
 
-  // Galeri gambar: pakai images[] kalau ada, fallback ke imageUrl
+  // galeri gambar: pakai images[] kalo ada, fallback ke imageUrl
   const gallery = product.images?.length
     ? product.images
     : [product.imageUrl].filter(Boolean);
-
-  const { add } = useCart();
 
   const onAddToCart = () => {
     if (outOfStock) {
@@ -64,9 +99,8 @@ export default function ProductDetailPage() {
       alert(`Qty harus 1–${maxQty}`);
       return;
     }
-
+    // tetap pakai signature add(product, qty, variant)
     add(product, qty, size);
-
     alert("Ditambahkan ke keranjang (demo)");
   };
 
@@ -160,7 +194,6 @@ export default function ProductDetailPage() {
                 +
               </button>
             </div>
-
             {!outOfStock && (
               <p className="text-xs text-gray-500 mt-2">
                 Maksimal {maxQty} per pesanan.

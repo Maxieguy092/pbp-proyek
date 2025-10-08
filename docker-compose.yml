@@ -12,9 +12,12 @@ services:
       - DB_USER=pbpuser
       - DB_PASSWORD=pbppass
       - DB_NAME=pbpdb
-    
+
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        - VITE_API_URL=/api # <— ini yang bikin FE tau alamat backend
     container_name: pbp-frontend
     ports:
       - "3000:80"
@@ -31,7 +34,7 @@ services:
       MYSQL_USER: pbpuser
       MYSQL_PASSWORD: pbppass
     ports:
-      - "3307:3306"   # expose on host so you can connect from outside
+      - "3307:3306" # expose on host so you can connect from outside
     volumes:
       - db_data:/var/lib/mysql
 

@@ -1,20 +1,14 @@
 package controllers
 
 import (
-	// "backend/config"
-	// "backend/models"
-	// "backend/utils"
 	"crypto/rand"
 	"database/sql"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
 
 	db "github.com/Maxiegame092/pbp-app/DB"
 	"github.com/gin-gonic/gin"
-	// "net/http"
 )
 
 type LoginRequest struct {
@@ -37,31 +31,27 @@ func generateSessionID() string {
 
 func Register(w http.ResponseWriter, r *http.Request) {}
 
-func Login(w http.ResponseWriter, r *http.Request) {
+func Login(c *gin.Context) {
 	var req LoginRequest
-
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid request", http.StatusBadRequest)
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
 
-	var email string
-	var psswrd string
-	var name string
-
-	err := db.DB.QueryRow("SELECT email, email, password FROM accounts WHERE email = ?", req.Username).Scan(&name, &email, &psswrd)
+	var name, email, psswrd string
+	err := db.DB.QueryRow("SELECT name, email, password FROM accounts WHERE email = ?", req.Username).Scan(&name, &email, &psswrd)
 
 	if err == sql.ErrNoRows {
-		http.Error(w, "No User", http.StatusUnauthorized)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not found"})
 		return
 	} else if err != nil {
-		http.Error(w, "Database error", http.StatusInternalServerError)
-		fmt.Println(err)
+		fmt.Println("Database error:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "database error"})
 		return
 	}
 
 	if psswrd != req.Password {
-		http.Error(w, "Invalid password", http.StatusUnauthorized)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid password"})
 		return
 	}
 
@@ -69,51 +59,31 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		Message: "Login successful",
 		UserID:  name,
 	}
-
 	sessionID := generateSessionID()
 	sessions[sessionID] = req.Username
-
-	http.SetCookie(w, &http.Cookie{
-		Name:     "session_token",
-		Value:    sessionID,
-		Expires:  time.Now().Add(30 * time.Minute),
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   true,                  // true if you serve HTTPS
-		SameSite: http.SameSiteNoneMode, // required for cross-origin
-	})
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	c.SetCookie("session_token", sessionID, 30*60, "/", "localhost", true, true)
+	c.JSON(http.StatusOK, resp)
 }
 
 func Logout(c *gin.Context) {
-	c.SetCookie("session_token", "", -1, "/", "", false, true)
+	c.SetCookie("session_token", "", -1, "/", "localhost", true, true)
 	c.JSON(http.StatusOK, gin.H{"message": "Logged out"})
 }
 
-func CheckSession(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie("session_token")
+func CheckSession(c *gin.Context) {
+	cookie, err := c.Cookie("session_token")
 	if err != nil {
-		http.Error(w, "No session cookie", http.StatusUnauthorized)
-		fmt.Println("❌ No cookie found")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "no session cookie"})
 		return
 	}
-
-	username, exists := sessions[cookie.Value]
+	// BARIS INI DIPERBAIKI: langsung gunakan 'cookie', bukan 'cookie.Value'
+	username, exists := sessions[cookie]
 	if !exists {
-		http.Error(w, "Invalid or expired session", http.StatusUnauthorized)
-		fmt.Println("❌ Invalid session:", cookie.Value)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired session"})
 		return
 	}
-
-	fmt.Println("✅ Session valid for:", username)
-
-	response := map[string]string{
+	c.JSON(http.StatusOK, gin.H{
 		"message":  "Session valid",
 		"username": username,
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	})
 }

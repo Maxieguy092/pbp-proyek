@@ -1,20 +1,20 @@
 import { Link, useNavigate } from "react-router-dom";
 import MainLayout from "../templates/MainLayout/MainLayout";
 import Button from "../atoms/Button/Button";
-import { useEffect } from "react";
-
+import { useEffect, useState } from "react"; // Import useState
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const [error, setError] = useState(null); // State untuk error
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/me", {
+    fetch("/api/me", {
       method: "GET",
-      credentials: "include", 
+      credentials: "include",
     })
       .then((res) => {
         if (res.ok) {
-          window.location.href = "/dashboard/profile"; 
+          window.location.href = "/dashboard/profile";
         }
       })
       .catch((err) => {
@@ -22,29 +22,34 @@ export default function LoginPage() {
       });
   }, []);
 
-  const onSubmit = (e) => {
+  // Fungsi onSubmit yang sudah diperbarui
+  const onSubmit = async (e) => {
     e.preventDefault();
-    const username = e.target.email.value;
-    const password = e.target.password.value;  
+    setError(null); // Bersihkan error lama
 
-    fetch("http://localhost:5000/api/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ username, password }),
-    }).then((res) => {
-        if (!res.ok) throw new Error("Login failed");
-        return res.json();
-      })
-      .then((data) => {
-        console.log("Logged in:", data);
-        window.location.href = "/dashboard/profile";
-      })
-      .catch((err) => {
-        console.error("Error:", err);
+    const username = e.target.email.value;
+    const password = e.target.password.value;
+
+    try {
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ username, password }),
       });
 
-    
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Terjadi kesalahan saat login.");
+      }
+
+      console.log("Logged in:", data);
+      window.location.href = "/dashboard/profile";
+    } catch (err) {
+      setError(err.message);
+      console.error("Login error:", err);
+    }
   };
 
   return (
@@ -75,6 +80,19 @@ export default function LoginPage() {
                 placeholder="password"
                 className="w-full rounded-xl border border-[#e5e8d2] bg-[#fbfcee] px-4 py-3 outline-none focus:border-[#3971b8] transition"
               />
+
+              {/* Tampilkan pesan error di sini */}
+              {error && (
+                <p className="rounded-lg bg-red-100 p-3 text-center text-sm text-red-600">
+                  {error.includes("not found") && "Email tidak terdaftar."}
+                  {error.includes("invalid password") &&
+                    "Password yang Anda masukkan salah."}
+                  {!error.includes("not found") &&
+                    !error.includes("invalid password") &&
+                    error}
+                </p>
+              )}
+
               <div className="pt-2 flex justify-center">
                 <Button type="submit" className="w-[140px] text-center">
                   Log In
