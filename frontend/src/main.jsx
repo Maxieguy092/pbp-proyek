@@ -25,7 +25,9 @@ import ProductForm from "./components/pages/admin/ProductForm.jsx";
 import OrderManagement from "./components/pages/admin/OrderManagement.jsx";
 
 import { CartProvider } from "./contexts/CartContext.jsx";
-import { ProductProvider } from "./contexts/ProductContext.jsx"; // ⬅️ tambahkan ini
+import { ProductProvider } from "./contexts/ProductContext.jsx"; 
+import OrderDetail from "./components/pages/admin/OrderDetail.jsx";
+
 
 // --- Optional: komponen error & 404 simple ---
 function GlobalError() {
@@ -82,7 +84,8 @@ const router = createBrowserRouter(
     { path: "/admin/products/new", element: <ProductForm /> },
     { path: "/admin/products/:id/edit", element: <ProductForm /> },
     { path: "/admin/orders", element: <OrderManagement /> },
-
+    { path: "/admin/detail", element: <OrderDetail /> },
+    
     // 404 last
     { path: "*", element: <NotFound /> },
   ],
