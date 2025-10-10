@@ -25,6 +25,7 @@ import ProductForm from "./components/pages/admin/ProductForm.jsx";
 import OrderManagement from "./components/pages/admin/OrderManagement.jsx";
 
 import { CartProvider } from "./contexts/CartContext.jsx";
+import { ProductProvider } from "./contexts/ProductContext.jsx"; // ⬅️ tambahkan ini
 
 // --- Optional: komponen error & 404 simple ---
 function GlobalError() {
@@ -96,7 +97,9 @@ const router = createBrowserRouter(
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <CartProvider>
-      <RouterProvider router={router} fallbackElement={<GlobalError />} />
+       <ProductProvider> 
+          <RouterProvider router={router} fallbackElement={<GlobalError />} />
+        </ProductProvider> 
     </CartProvider>
   </StrictMode>
 );

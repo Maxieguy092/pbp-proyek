@@ -4,25 +4,27 @@
 import { Link } from "react-router-dom";
 import AdminLayout from "../../templates/AdminLayout/AdminLayout";
 import { formatIDR } from "../../../contexts/CartContext";
+import { useProducts } from "../../../contexts/ProductContext";
 
-const MOCK = [
-  {
-    id: "p-001",
-    name: "Baju Baju baju baju – warna",
-    category: "Outerwear",
-    price: 999999,
-    stock: 45,
-  },
-  {
-    id: "p-002",
-    name: "Baju Baju baju baju – warna",
-    category: "Outerwear",
-    price: 999999,
-    stock: 45,
-  },
-];
+// const MOCK = [
+//   {
+//     id: "p-001",
+//     name: "Baju Baju baju baju – warna",
+//     category: "Outerwear",
+//     price: 999999,
+//     stock: 45,
+//   },
+//   {
+//     id: "p-002",
+//     name: "Baju Baju baju baju – warna",
+//     category: "Outerwear",
+//     price: 999999,
+//     stock: 45,
+//   },
+// ];
 
 export default function ProductManagementList() {
+  const { products } = useProducts();
   return (
     <AdminLayout>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
@@ -61,9 +63,9 @@ export default function ProductManagementList() {
               </tr>
             </thead>
             <tbody>
-              {MOCK.map((p, idx) => (
+              {products.map((p, idx) => (
                 <tr key={p.id} className="border-b border-[#d3e0a9]">
-                  <td className="py-3 px-4">{String(idx + 99)}.</td>
+                  <td className="py-3 px-4">{idx + 1}.</td>
                   <td className="py-3 px-4">{p.name}</td>
                   <td className="py-3 px-4 font-semibold">{p.category}</td>
                   <td className="py-3 px-4">{formatIDR(p.price)}</td>
@@ -79,7 +81,7 @@ export default function ProductManagementList() {
                 </tr>
               ))}
               {/* baris kosong buat vibe mockup */}
-              {Array.from({ length: 10 }).map((_, i) => (
+              {Array.from({ length: 10 - products.length }).map((_, i) => (
                 <tr key={`empty-${i}`} className="border-b border-[#d3e0a9]">
                   <td className="py-6 px-4">&nbsp;</td>
                   <td className="py-6 px-4" colSpan="5">
