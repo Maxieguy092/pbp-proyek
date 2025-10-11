@@ -39,7 +39,7 @@ func Login(c *gin.Context) {
 	}
 
 	var name, email, psswrd string
-	err := db.DB.QueryRow("SELECT name, email, password FROM accounts WHERE email = ?", req.Username).Scan(&name, &email, &psswrd)
+	err := db.DB.QueryRow("SELECT name, email, password_hash FROM users WHERE email = ?", req.Username).Scan(&name, &email, &psswrd)
 
 	if err == sql.ErrNoRows {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not found"})

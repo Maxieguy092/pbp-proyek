@@ -26,13 +26,14 @@ func GetProducts(c *gin.Context) {
 	category := c.Query("category")
 
 	query := `
-		SELECT product_id, name, price, category, image_url, images, sizes, stock, description
-		FROM products
-	`
+    SELECT p.id, p.name, p.price, c.name as category, p.image_url, p.images, p.sizes, p.stock, p.description
+    FROM products p
+    JOIN categories c ON p.category_id = c.id
+	`	
 	args := []any{}
 	if category != "" {
-		query += " WHERE category = ?"
-		args = append(args, category)
+			query += " WHERE c.name = ?"
+			args = append(args, category)
 	}
 
 	rows, err := db.DB.Query(query, args...)
@@ -80,9 +81,10 @@ func GetProductByID(c *gin.Context) {
 	var p Product
 	var imagesJSON, sizesJSON sql.NullString
 	err = db.DB.QueryRow(`
-		SELECT product_id, name, price, category, image_url, images, sizes, stock, description
-		FROM products
-		WHERE product_id = ?
+		SELECT p.id, p.name, p.price, c.name as category, p.image_url, p.images, p.sizes, p.stock, p.description
+    FROM products p
+    JOIN categories c ON p.category_id = c.id
+    WHERE p.id = ?
 	`, id).Scan(
 		&p.ID, &p.Name, &p.Price, &p.Category, &p.ImageURL,
 		&imagesJSON, &sizesJSON, &p.Stock, &p.Description,
