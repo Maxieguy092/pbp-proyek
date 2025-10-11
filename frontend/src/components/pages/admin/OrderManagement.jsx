@@ -1,37 +1,11 @@
 // ==================================================
 // 📁 src/components/pages/admin/OrderManagement.jsx
 // ==================================================
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import AdminLayout from "../../templates/AdminLayout/AdminLayout";
 import { formatIDR } from "../../../contexts/CartContext";
-
-const MOCK_ORDERS = [
-  {
-    id: "ORD-001",
-    customer: "Ganteng",
-    total: 1999000,
-    address: "Jl. Diponegoro No. 1",
-    status: "Pending",
-    date: "28 Sep 2025",
-  },
-  {
-    id: "ORD-002",
-    customer: "Andi",
-    total: 2999000,
-    address: "Jl. Pandanaran No. 5",
-    status: "Processing",
-    date: "28 Sep 2025",
-  },
-  {
-    id: "ORD-003",
-    customer: "Budi",
-    total: 1599000,
-    address: "Jl. Undip Raya",
-    status: "Delivering",
-    date: "27 Sep 2025",
-  },
-];
+import { fetchOrders, updateOrderStatus } from "../../../api/orders"; // Impor fungsi API
 
 const STATUS_OPTIONS = [
   "Pending",
@@ -42,14 +16,39 @@ const STATUS_OPTIONS = [
 ];
 
 export default function OrderManagement() {
-  const [orders, setOrders] = useState(MOCK_ORDERS);
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
 
+  // Ambil data dari backend saat komponen dimuat
+  useEffect(() => {
+    setLoading(true);
+    fetchOrders()
+      .then(setOrders)
+      .catch((err) => console.error(err))
+      .finally(() => setLoading(false));
+  }, []);
+
+  // Fungsi untuk mengubah status
   const changeStatus = (id, newStatus) => {
+    // Optimistic update: langsung ubah di UI
     setOrders((prev) =>
       prev.map((o) => (o.id === id ? { ...o, status: newStatus } : o))
     );
-    // TODO: panggil API PUT /orders/:id utk update status
+
+    // Kirim perubahan ke backend
+    updateOrderStatus(id, newStatus).catch((err) => {
+      console.error("Gagal update:", err);
+      alert("Gagal memperbarui status. Coba lagi.");
+      // Jika perlu, kembalikan data ke state semula
+    });
   };
+
+  if (loading)
+    return (
+      <AdminLayout>
+        <p>Loading...</p>
+      </AdminLayout>
+    );
 
   return (
     <AdminLayout>

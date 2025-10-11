@@ -20,6 +20,10 @@ func SetupRoutes(r *gin.Engine) {
 		api.GET("/products", controllers.GetProducts)
 		api.GET("/products/:id", controllers.GetProductByID)
 
+		api.GET("/admin/orders", controllers.GetOrders)
+		api.GET("/admin/orders/:id", controllers.GetOrderByID)
+		api.PUT("/admin/orders/:id/status", controllers.UpdateOrderStatus)
+
 		// Rute untuk health check
 		api.GET("/healthz", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"ok": true})

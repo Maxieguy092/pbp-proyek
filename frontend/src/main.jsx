@@ -86,7 +86,7 @@ const router = createBrowserRouter(
     { path: "/admin/products/new", element: <ProductForm /> },
     { path: "/admin/products/:id/edit", element: <ProductForm /> },
     { path: "/admin/orders", element: <OrderManagement /> },
-    { path: "/admin/detail", element: <OrderDetail /> },
+    { path: "/admin/orders/:id", element: <OrderDetail /> },
 
     { path: "*", element: <NotFound /> },
   ],
