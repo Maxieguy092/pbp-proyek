@@ -1,23 +1,46 @@
-// ==================================================
-// 📁 File: src/components/pages/SignupPage.jsx
-// ==================================================
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom"; // Impor useNavigate
 import MainLayout from "../templates/MainLayout/MainLayout";
 import Button from "../atoms/Button/Button";
+import { registerUser } from "../../api/auth"; // Impor fungsi API
 
 export default function SignupPage() {
   const [pw, setPw] = useState("");
   const [cpw, setCpw] = useState("");
   const [err, setErr] = useState("");
+  const [loading, setLoading] = useState(false); // State untuk loading
+  const navigate = useNavigate(); // Hook untuk navigasi
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
+    setErr(""); // Reset error setiap kali submit
+
     if (pw !== cpw) {
       setErr("Passwords do not match");
       return;
     }
-    // TODO: register API
+
+    setLoading(true);
+
+    // Ambil semua data dari form
+    const formData = new FormData(e.target);
+    const userData = {
+      firstName: formData.get("firstName"),
+      lastName: formData.get("lastName"),
+      email: formData.get("email"),
+      password: formData.get("password"),
+    };
+
+    try {
+      await registerUser(userData);
+      // Jika sukses, arahkan ke halaman login
+      navigate("/login?status=registered");
+    } catch (error) {
+      // Tangkap error dari API dan tampilkan
+      setErr(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -76,8 +99,12 @@ export default function SignupPage() {
               />
               {err && <p className="text-red-600 text-sm">{err}</p>}
               <div className="pt-2 flex justify-center">
-                <Button type="submit" className="w-[140px] text-center">
-                  Sign Up
+                <Button
+                  type="submit"
+                  className="w-[140px] text-center"
+                  disabled={loading}
+                >
+                  {loading ? "Signing Up..." : "Sign Up"}
                 </Button>
               </div>
             </form>

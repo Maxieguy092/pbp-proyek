@@ -1,7 +1,15 @@
 // ==================================================
 // 📁 File: src/components/pages/Dashboard/ProfilePage.jsx
 // ==================================================
+import { useOutletContext } from "react-router-dom"; // ← 1. Impor hook
+
 export default function ProfilePage() {
+  const { user } = useOutletContext(); // ← 2. Ambil data user dari layout
+
+  if (!user) {
+    return <p>Loading user data...</p>; // Tampilan sementara saat data dimuat
+  }
+
   return (
     <div className="space-y-8">
       <div>
@@ -11,29 +19,31 @@ export default function ProfilePage() {
       </div>
 
       <section>
-        <h2 className="text-lg font-semibold mb-2">Sign In Information</h2>
-        <div className="space-y-1 text-sm">
+        {/* 3. Ubah ukuran font judul */}
+        <h2 className="text-xl font-semibold mb-2">Sign In Information</h2>
+        {/* 4. Ubah ukuran font konten */}
+        <div className="space-y-1 text-base">
           <p>
-            <span className="inline-block w-24 font-medium">Email</span>
-            nama@example.com
+            <span className="inline-block w-28 font-medium">Email</span>:{" "}
+            {user.email}
           </p>
           <p>
-            <span className="inline-block w-24 font-medium">Password</span>
-            ••••••
+            <span className="inline-block w-28 font-medium">Password</span>:{" "}
+            ••••••••
           </p>
         </div>
       </section>
 
       <section>
-        <h2 className="text-lg font-semibold mb-2">About Me</h2>
-        <div className="space-y-1 text-sm">
+        <h2 className="text-xl font-semibold mb-2">About Me</h2>
+        <div className="space-y-1 text-base">
           <p>
-            <span className="inline-block w-24 font-medium">First name</span>
-            Example
+            <span className="inline-block w-28 font-medium">First name</span>:{" "}
+            {user.firstName}
           </p>
           <p>
-            <span className="inline-block w-24 font-medium">Last name</span>
-            Example2
+            <span className="inline-block w-28 font-medium">Last name</span>:{" "}
+            {user.lastName}
           </p>
         </div>
       </section>

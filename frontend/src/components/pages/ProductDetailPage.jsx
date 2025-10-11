@@ -1,11 +1,13 @@
 // ==================================================
-// 📁 src/components/pages/ProductDetailPage.jsx
+// 📁 File: src/components/pages/ProductDetailPage.jsx
 // ==================================================
 import { useParams, Link } from "react-router-dom";
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import MainLayout from "../templates/MainLayout/MainLayout";
-import { getProductById } from "../../data/catalog";
 import { useCart } from "../../contexts/CartContext";
+import { fetchProductById } from "../../api/products";
+import { useUser } from "../../contexts/UserContext";
+import LoginPromptModal from "../molecules/LoginPromptModal/LoginPromptModal";
 
 // Formatter IDR
 const formatIDR = (n) =>
@@ -15,14 +17,53 @@ const formatIDR = (n) =>
     maximumFractionDigits: 0,
   }).format(n);
 
-const FALLBACK_IMG = "../../images/fallback.jpg";
+const FALLBACK_IMG = "/images/fallback.jpg";
 
 export default function ProductDetailPage() {
   const { id } = useParams();
-  const product = useMemo(() => getProductById(id), [id]);
+  const { add } = useCart();
+  const { user, loading: userLoading } = useUser(); // Ambil status user
+  const [showLoginModal, setShowLoginModal] = useState(false); // State untuk modal
 
+  // --- data state ---
+  const [loading, setLoading] = useState(true);
+  const [product, setProduct] = useState(null);
+
+  // --- ui state ---
   const [qty, setQty] = useState(1);
-  const [size, setSize] = useState(product?.sizes?.[0] ?? null);
+  const [size, setSize] = useState(null);
+
+  // fetch product dari backend
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    fetchProductById(id)
+      .then((p) => {
+        if (!alive) return;
+        setProduct(p);
+        // default size kalo ada
+        setSize(p?.sizes?.[0] ?? null);
+      })
+      .catch(() => {
+        if (!alive) return;
+        setProduct(null);
+      })
+      .finally(() => alive && setLoading(false));
+    return () => {
+      alive = false;
+    };
+  }, [id]);
+
+  // guard
+  if (loading) {
+    return (
+      <MainLayout>
+        <div className="mx-auto max-w-7xl px-4 py-14 text-center">
+          <h1 className="text-2xl font-semibold">Memuat produk…</h1>
+        </div>
+      </MainLayout>
+    );
+  }
 
   if (!product) {
     return (
@@ -44,14 +85,18 @@ export default function ProductDetailPage() {
   const maxQty = Number.isFinite(product?.stock) ? product.stock : 10;
   const outOfStock = maxQty <= 0;
 
-  // Galeri gambar: pakai images[] kalau ada, fallback ke imageUrl
+  // galeri gambar: pakai images[] kalo ada, fallback ke imageUrl
   const gallery = product.images?.length
     ? product.images
     : [product.imageUrl].filter(Boolean);
 
-  const { add } = useCart();
-
   const onAddToCart = () => {
+    // Jika belum login, tampilkan modal, jangan lanjutkan
+    if (!user) {
+      setShowLoginModal(true);
+      return;
+    }
+
     if (outOfStock) {
       alert("Stok habis");
       return;
@@ -64,14 +109,16 @@ export default function ProductDetailPage() {
       alert(`Qty harus 1–${maxQty}`);
       return;
     }
-
     add(product, qty, size);
-
     alert("Ditambahkan ke keranjang (demo)");
   };
 
   return (
     <MainLayout>
+      <LoginPromptModal
+        open={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+      />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Kiri: Galeri */}
@@ -160,7 +207,6 @@ export default function ProductDetailPage() {
                 +
               </button>
             </div>
-
             {!outOfStock && (
               <p className="text-xs text-gray-500 mt-2">
                 Maksimal {maxQty} per pesanan.
@@ -171,14 +217,19 @@ export default function ProductDetailPage() {
             <div className="mt-6">
               <button
                 onClick={onAddToCart}
-                disabled={outOfStock}
+                // Tambahkan disabled saat userLoading agar tidak bisa diklik sebelum status login diketahui
+                disabled={outOfStock || userLoading}
                 className={`w-full sm:w-64 rounded-xl px-6 py-3 font-medium transition ${
-                  outOfStock
+                  outOfStock || userLoading
                     ? "bg-gray-300 text-gray-600 cursor-not-allowed"
                     : "bg-[#3971b8] text-[#fbfcee] hover:opacity-95 active:scale-[.99]"
                 }`}
               >
-                {outOfStock ? "Stok Habis" : "Add to cart"}
+                {userLoading
+                  ? "Loading..."
+                  : outOfStock
+                  ? "Stok Habis"
+                  : "Add to cart"}
               </button>
             </div>
 

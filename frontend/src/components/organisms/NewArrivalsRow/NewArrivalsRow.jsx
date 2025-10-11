@@ -1,10 +1,31 @@
-// src/components/organisms/NewArrivalsRow/NewArrivalsRow.jsx
+import { useEffect, useState, useMemo } from "react";
 import ProductCard from "../../molecules/ProductCard/ProductCard";
-import { allProducts, shuffle } from "../../../data/catalog";
+import { fetchProducts } from "../../../api/products";
+
+// Pindahkan fungsi shuffle ke sini agar komponen ini mandiri
+const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
 
 export default function NewArrivalsRow() {
-  // contoh: random 5 item dari semua kategori
-  const arrivals = shuffle(allProducts).slice(0, 5);
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
+
+  useEffect(() => {
+    (async () => {
+      try {
+        // Panggil fetchProducts tanpa argumen untuk mengambil SEMUA produk
+        const data = await fetchProducts({});
+        setItems(data);
+      } catch (e) {
+        setErr(String(e.message || e));
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  // Acak dan potong data HANYA saat 'items' berubah
+  const arrivals = useMemo(() => shuffle(items).slice(0, 5), [items]);
 
   return (
     <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
@@ -15,6 +36,9 @@ export default function NewArrivalsRow() {
           harianmu.
         </p>
       </div>
+
+      {loading && <p className="text-center">Loading new arrivals…</p>}
+      {err && <p className="text-center text-red-600">{err}</p>}
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
         {arrivals.map((p) => (

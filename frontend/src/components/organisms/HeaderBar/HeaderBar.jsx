@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import SearchDropdown from "../../molecules/SearchDropdown/SearchDropdown";
 import CartDrawer from "../../molecules/CartDrawer/CartDrawer";
+import { useUser } from "../../../contexts/UserContext";
 
 const IconSearch = (props) => (
   <svg
@@ -58,6 +59,9 @@ const IconUser = (props) => (
 export default function HeaderBar() {
   const [openSearch, setOpenSearch] = useState(false);
   const [openCart, setOpenCart] = useState(false);
+  const { user } = useUser();
+
+  // console.log("user from useUser()", user);
 
   return (
     <header className="w-full bg-[#c8d69b] sticky top-0 z-50 border-b border-[#d3e0a9] text-[#3971b8]">
@@ -88,7 +92,7 @@ export default function HeaderBar() {
             </button>
 
             <Link
-              to="/login"
+              to={user ? "/dashboard/profile" : "/login"}
               aria-label="Akun"
               className="p-2 rounded-xl hover:bg-[#e1eac4] transition"
             >

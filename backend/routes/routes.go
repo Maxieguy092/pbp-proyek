@@ -1,6 +1,8 @@
 package routes
 
 import (
+	"net/http"
+
 	"github.com/Maxiegame092/pbp-app/controllers"
 	"github.com/gin-gonic/gin"
 )
@@ -8,12 +10,19 @@ import (
 func SetupRoutes(r *gin.Engine) {
 	api := r.Group("/api")
 	{
-		api.POST("/login", func(c *gin.Context) {
-			controllers.Login(c.Writer, c.Request)
-		})
-		api.POST("/register", func(c *gin.Context) {
-			controllers.Register(c.Writer, c.Request)
+		// Rute untuk autentikasi
+		api.POST("/login", controllers.Login)
+		api.POST("/register", controllers.Register) // <-- INI PERUBAHANNYA
+		api.POST("/logout", controllers.Logout)
+		api.GET("/me", controllers.CheckSession)
+
+		// Rute untuk produk
+		api.GET("/products", controllers.GetProducts)
+		api.GET("/products/:id", controllers.GetProductByID)
+
+		// Rute untuk health check
+		api.GET("/healthz", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{"ok": true})
 		})
 	}
-
 }

@@ -1,5 +1,5 @@
 // src/main.jsx
-import { StrictMode } from "react";
+import { StrictMode, useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import "./index.css";
@@ -25,9 +25,7 @@ import ProductForm from "./components/pages/admin/ProductForm.jsx";
 import OrderManagement from "./components/pages/admin/OrderManagement.jsx";
 
 import { CartProvider } from "./contexts/CartContext.jsx";
-import { ProductProvider } from "./contexts/ProductContext.jsx"; 
-import OrderDetail from "./components/pages/admin/OrderDetail.jsx";
-
+import { UserProvider } from "./contexts/UserContext.jsx";
 
 // --- Optional: komponen error & 404 simple ---
 function GlobalError() {
@@ -97,12 +95,18 @@ const router = createBrowserRouter(
   }
 );
 
+function App() {
+  return (
+    <UserProvider>
+      <CartProvider>
+        <RouterProvider router={router} fallbackElement={<GlobalError />} />
+      </CartProvider>
+    </UserProvider>
+  );
+}
+
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <CartProvider>
-       <ProductProvider> 
-          <RouterProvider router={router} fallbackElement={<GlobalError />} />
-        </ProductProvider> 
-    </CartProvider>
+    <App />
   </StrictMode>
 );
