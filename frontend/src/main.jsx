@@ -26,6 +26,8 @@ import OrderManagement from "./components/pages/admin/OrderManagement.jsx";
 
 import { CartProvider } from "./contexts/CartContext.jsx";
 import { UserProvider } from "./contexts/UserContext.jsx";
+import { ProductProvider } from "./contexts/ProductContext.jsx";
+import OrderDetail from "./components/pages/admin/OrderDetail.jsx";
 
 // --- Optional: komponen error & 404 simple ---
 function GlobalError() {
@@ -83,7 +85,7 @@ const router = createBrowserRouter(
     { path: "/admin/products/:id/edit", element: <ProductForm /> },
     { path: "/admin/orders", element: <OrderManagement /> },
     { path: "/admin/orders/:id", element: <OrderDetail /> },
-    
+
     // 404 last
     { path: "*", element: <NotFound /> },
   ],
@@ -99,7 +101,9 @@ function App() {
   return (
     <UserProvider>
       <CartProvider>
-        <RouterProvider router={router} fallbackElement={<GlobalError />} />
+        <ProductProvider>
+          <RouterProvider router={router} fallbackElement={<GlobalError />} />
+        </ProductProvider>
       </CartProvider>
     </UserProvider>
   );
