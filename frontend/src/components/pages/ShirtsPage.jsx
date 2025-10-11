@@ -5,12 +5,10 @@ import ProductCard from "../molecules/ProductCard/ProductCard";
 import { fetchProducts } from "../../api/products";
 
 export default function ShirtsPage() {
-  // 1. Siapkan state untuk data, loading, dan error
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
-  // 2. Ambil data dari API saat komponen dimuat
   useEffect(() => {
     (async () => {
       try {
