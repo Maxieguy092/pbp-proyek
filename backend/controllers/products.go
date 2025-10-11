@@ -10,6 +10,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+import "io"
+
+
 type Product struct {
 	ID          int64    `json:"id"`
 	Name        string   `json:"name"`
@@ -105,4 +108,114 @@ func GetProductByID(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, p)
+}
+
+
+
+func CreateProduct(c *gin.Context) {
+	var p Product
+	if err := c.ShouldBindJSON(&p); err != nil {
+		// 🔥 cetak error ke terminal (biar muncul di log Docker)
+		println("JSON BIND ERROR:", err.Error())
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":  "invalid JSON",
+			"detail": err.Error(),
+		})
+		return
+	}
+
+	// ubah array jadi JSON string
+	imagesJSON, _ := json.Marshal(p.Images)
+	sizesJSON, _ := json.Marshal(p.Sizes)
+
+	query := `
+		INSERT INTO products (name, price, category_id, image_url, images, sizes, stock, description)
+		VALUES (?, ?, (SELECT id FROM categories WHERE name = ? LIMIT 1), ?, ?, ?, ?, ?)
+	`
+	res, err := db.DB.Exec(query,
+		p.Name, p.Price, p.Category, p.ImageURL,
+		string(imagesJSON), string(sizesJSON), p.Stock, p.Description,
+	)
+	if err != nil {
+		// 🔥 print juga kalau SQL error
+		println("SQL ERROR:", err.Error())
+
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	id, _ := res.LastInsertId()
+	p.ID = id
+
+	c.JSON(http.StatusCreated, p)
+}
+
+
+
+func UpdateProduct(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
+
+	var p Product
+	if err := c.ShouldBindJSON(&p); err != nil {
+		// 🔍 Debug log: tampilkan isi body JSON yang dikirim frontend
+		body, _ := io.ReadAll(c.Request.Body)
+		println("BODY:", string(body))
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":  "invalid JSON",
+			"detail": err.Error(),
+		})
+		return
+	}
+
+	// ubah array ke JSON string untuk disimpan di DB
+	imagesJSON, _ := json.Marshal(p.Images)
+	sizesJSON, _ := json.Marshal(p.Sizes)
+
+	query := `
+		UPDATE products
+		SET name = ?, price = ?, category_id = (SELECT id FROM categories WHERE name = ? LIMIT 1),
+			image_url = ?, images = ?, sizes = ?, stock = ?, description = ?
+		WHERE id = ?
+	`
+	_, err = db.DB.Exec(query,
+		p.Name, p.Price, p.Category, p.ImageURL,
+		string(imagesJSON), string(sizesJSON), p.Stock, p.Description, id,
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "db update error"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "product updated"})
+}
+
+
+func DeleteProduct(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
+
+	res, err := db.DB.Exec("DELETE FROM products WHERE id = ?", id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "db error", "detail": err.Error()})
+		return
+	}
+
+	rowsAffected, _ := res.RowsAffected()
+	if rowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "product not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "product deleted"})
 }

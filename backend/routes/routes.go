@@ -19,6 +19,10 @@ func SetupRoutes(r *gin.Engine) {
 		// Rute untuk produk
 		api.GET("/products", controllers.GetProducts)
 		api.GET("/products/:id", controllers.GetProductByID)
+		api.POST("/products", controllers.CreateProduct)
+		api.PUT("/products/:id", controllers.UpdateProduct) 
+		api.DELETE("/products/:id", controllers.DeleteProduct)
+
 
 		// Rute untuk health check
 		api.GET("/healthz", func(c *gin.Context) {

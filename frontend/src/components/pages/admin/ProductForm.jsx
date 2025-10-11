@@ -16,9 +16,10 @@ export default function ProductForm() {
   const isEdit = Boolean(id);
   const { products, addProduct, updateProduct, deleteProduct } = useProducts();
 
+  const productId = Number(id);
   const existing = useMemo(
-    () => products.find((p) => p.id === id) || {},
-    [id, products]
+    () => products.find((p) => p.id === productId) || {},
+    [productId, products]
   );
 
 
@@ -129,16 +130,19 @@ export default function ProductForm() {
 
   // optional: cleanup object URLs biar ga leak
   useEffect(() => {
-  if (isEdit && existing.images) {
-    // pastikan formatnya sesuai (kalau dari backend string URL)
-    const existingPreviews = existing.images.map((img) =>
-      typeof img === "string" ? { url: img } : img
-    );
-    setForm((f) => ({ ...f, images: existingPreviews }));
-  }
-}, [isEdit, existing]);
-
-
+    if (isEdit && existing.id) {
+      setForm({
+        name: existing.name || "",
+        category: existing.category || "",
+        price: existing.price || 0,
+        stock: existing.stock || 0,
+        description: existing.description || "",
+        images: (existing.images || []).map((img) =>
+          typeof img === "string" ? { url: img } : img
+        ),
+      });
+    }
+  }, [isEdit, existing]);
 
 
 
