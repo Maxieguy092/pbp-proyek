@@ -2,6 +2,7 @@
 // 📁 src/components/pages/admin/OrderManagement.jsx
 // ==================================================
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import AdminLayout from "../../templates/AdminLayout/AdminLayout";
 import { formatIDR } from "../../../contexts/CartContext";
 
@@ -80,6 +81,9 @@ export default function OrderManagement() {
                 <th className="text-left py-3 px-4 border-b border-[#d3e0a9] w-40">
                   Status
                 </th>
+                <th className="text-left py-3 px-4 border-b border-[#d3e0a9] w-28">
+                  Action
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -102,6 +106,14 @@ export default function OrderManagement() {
                         </option>
                       ))}
                     </select>
+                  </td>
+                  <td className="py-3 px-4">
+                    <Link
+                      to={`/admin/orders/${o.id}`}
+                      className="text-[#3b6aa8] hover:underline font-medium"
+                    >
+                      View Detail
+                    </Link>
                   </td>
                 </tr>
               ))}
