@@ -27,12 +27,6 @@ type RegisterRequest struct {
 	Password  string `json:"password"`
 }
 
-// Struct untuk response body
-type LoginResponse struct {
-	Message string `json:"message"`
-	UserID  string `json:"username,omitempty"`
-}
-
 // Manajemen sesi sederhana (in-memory)
 var sessions = map[string]string{}
 
@@ -90,10 +84,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// Variabel disesuaikan dengan skema baru (first_name, last_name)
 	var firstName, lastName, email, psswrd string
-	
-	// Kueri disesuaikan untuk mengambil first_name dan last_name
 	err := db.DB.QueryRow("SELECT first_name, last_name, email, password_hash FROM users WHERE email = ?", req.Username).Scan(&firstName, &lastName, &email, &psswrd)
 
 	if err == sql.ErrNoRows {
@@ -105,27 +96,31 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// 🔐 PERBAIKAN KRITIS: Membandingkan password request dengan hash di database
 	err = bcrypt.CompareHashAndPassword([]byte(psswrd), []byte(req.Password))
 	if err != nil {
-		// Jika err tidak nil, berarti password salah
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid password"})
 		return
 	}
-	
-	fullName := fmt.Sprintf("%s %s", firstName, lastName)
-	resp := LoginResponse{
-		Message: "Login successful",
-		UserID:  fullName, // Menggunakan nama lengkap
-	}
+
+	// --- BAGIAN YANG DIPERBAIKI ---
+	// 1. Buat sesi dan cookie terlebih dahulu
 	sessionID := generateSessionID()
-	sessions[sessionID] = req.Username
-	c.SetCookie("session_token", sessionID, 30*60, "/", "localhost", true, true)
-	c.JSON(http.StatusOK, resp)
+	sessions[sessionID] = email // Simpan email sebagai identifier sesi
+	c.SetCookie("session_token", sessionID, 30*60, "/", "localhost", false, true)
+
+	// 2. Kirim respons JSON dalam satu panggilan
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Login successful",
+		"user": gin.H{
+			"firstName": firstName,
+			"lastName":  lastName,
+			"email":     email,
+		},
+	})
 }
 
 func Logout(c *gin.Context) {
-	c.SetCookie("session_token", "", -1, "/", "localhost", true, true)
+	c.SetCookie("session_token", "", -1, "/", "localhost", false, true)
 	c.JSON(http.StatusOK, gin.H{"message": "Logged out"})
 }
 
@@ -135,14 +130,25 @@ func CheckSession(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "no session cookie"})
 		return
 	}
-	
-	username, exists := sessions[cookie]
+
+	email, exists := sessions[cookie]
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired session"})
 		return
 	}
+
+	var firstName, lastName string
+	query := "SELECT first_name, last_name FROM users WHERE email = ?"
+	err = db.DB.QueryRow(query, email).Scan(&firstName, &lastName)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch user data"})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"message":  "Session valid",
-		"username": username,
+		"firstName": firstName,
+		"lastName":  lastName,
+		"email":     email,
 	})
 }
