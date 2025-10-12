@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/Maxiegame092/pbp-app/controllers"
+	"github.com/Maxiegame092/pbp-app/middleware"
 	"github.com/gin-gonic/gin"
 )
 
@@ -12,9 +13,8 @@ func SetupRoutes(r *gin.Engine) {
 	{
 		// Rute untuk autentikasi
 		api.POST("/login", controllers.Login)
-		api.POST("/register", controllers.Register) // <-- INI PERUBAHANNYA
+		api.POST("/register", controllers.Register) 
 		api.POST("/logout", controllers.Logout)
-		api.GET("/me", controllers.CheckSession)
 
 		// Rute untuk produk
 		api.GET("/products", controllers.GetProducts)
@@ -23,6 +23,21 @@ func SetupRoutes(r *gin.Engine) {
 		api.GET("/admin/orders", controllers.GetOrders)
 		api.GET("/admin/orders/:id", controllers.GetOrderByID)
 		api.PUT("/admin/orders/:id/status", controllers.UpdateOrderStatus)
+
+		// Grup route yang dilindungi otentikasi
+		auth := api.Group("/")
+		auth.Use(middleware.AuthMiddleware())
+		{
+			// Endpoint untuk profil
+			auth.GET("/me", controllers.CheckSession)
+
+			// Endpoint untuk keranjang
+			auth.GET("/cart", controllers.GetCart)
+			auth.POST("/cart/items", controllers.AddItemToCart)
+			auth.PUT("/cart/items/:id", controllers.UpdateCartItem)
+			auth.DELETE("/cart/items/:id", controllers.DeleteCartItem)
+			auth.DELETE("/cart", controllers.ClearCart)
+		}
 
 		// Rute untuk health check
 		api.GET("/healthz", func(c *gin.Context) {

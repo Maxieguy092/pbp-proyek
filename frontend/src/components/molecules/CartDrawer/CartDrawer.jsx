@@ -34,7 +34,9 @@ export default function CartDrawer({ open, onClose }) {
         {/* items */}
         <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
           {items.map((it) => (
-            <div key={`${it.id}__${it.variant ?? ""}`} className="flex gap-4">
+            <div key={it.cartItemId} className="flex gap-4">
+              {" "}
+              {/* Gunakan cartItemId untuk key */}
               {/* thumbnail */}
               <div className="w-28 h-28 rounded-xl overflow-hidden bg-[#d9d9d9] border border-[#e8e8e8]">
                 <img
@@ -46,7 +48,6 @@ export default function CartDrawer({ open, onClose }) {
                   }}
                 />
               </div>
-
               {/* info + controls */}
               <div className="flex-1">
                 <p className="text-[#2b2b2b] leading-snug">
@@ -62,8 +63,9 @@ export default function CartDrawer({ open, onClose }) {
                 </p>
 
                 <div className="mt-2 inline-flex items-center border border-[#d3e0a9] rounded-lg overflow-hidden">
+                  {/* --- UBAH DI SINI --- */}
                   <button
-                    onClick={() => decrement(it.id, it.variant ?? null)}
+                    onClick={() => decrement(it.cartItemId)}
                     disabled={it.qty <= 1}
                     className={`px-3 py-2 ${
                       it.qty <= 1
@@ -74,13 +76,16 @@ export default function CartDrawer({ open, onClose }) {
                   >
                     –
                   </button>
+
                   <span className="px-4 py-2 border-x border-[#d3e0a9] select-none">
                     {it.qty}
                   </span>
+
+                  {/* --- UBAH DI SINI --- */}
                   <button
                     onClick={() => {
                       const max = Number.isFinite(it.stock) ? it.stock : 99;
-                      if (it.qty < max) increment(it.id, it.variant ?? null);
+                      if (it.qty < max) increment(it.cartItemId);
                     }}
                     className="px-3 py-2 hover:bg-[#e1eac4]"
                     aria-label="Tambah"
@@ -89,9 +94,9 @@ export default function CartDrawer({ open, onClose }) {
                   </button>
                 </div>
 
-                {/* remove satu item */}
+                {/* --- UBAH DI SINI --- */}
                 <button
-                  onClick={() => remove(it.id, it.variant ?? null)}
+                  onClick={() => remove(it.cartItemId)}
                   className="ml-5 mt-2 text-xs text-red-600 hover:underline"
                   title="Hapus item ini"
                 >
