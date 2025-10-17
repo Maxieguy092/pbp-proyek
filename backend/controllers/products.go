@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"fmt"
+	"time"
 
 	db "github.com/Maxiegame092/pbp-app/DB"
 	"github.com/gin-gonic/gin"
 )
-
-import "io"
 
 
 type Product struct {
@@ -26,26 +26,32 @@ type Product struct {
 }
 
 func GetProducts(c *gin.Context) {
+	fmt.Println("➡️ Mulai GetProducts")
+
 	category := c.Query("category")
 
 	query := `
-    SELECT p.id, p.name, p.price, c.name as category, p.image_url, p.images, p.sizes, p.stock, p.description
+    SELECT p.id, p.name, p.price, IFNULL(c.name, '') as category, p.image_url, p.images, p.sizes, p.stock, p.description
     FROM products p
-    JOIN categories c ON p.category_id = c.id
-	`	
+    LEFT JOIN categories c ON p.category_id = c.id
+	`
 	args := []any{}
 	if category != "" {
 			query += " WHERE c.name = ?"
 			args = append(args, category)
 	}
 
+	fmt.Println("📡 Query:", query)
+
 	rows, err := db.DB.Query(query, args...)
 	if err != nil {
+		fmt.Println("❌ DB Query error:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "db query error"})
 		return
 	}
 	defer rows.Close()
 
+	fmt.Println("✅ Query jalan, mulai iterasi")
 	var out []Product
 	for rows.Next() {
 		var p Product
@@ -54,24 +60,26 @@ func GetProducts(c *gin.Context) {
 			&p.ID, &p.Name, &p.Price, &p.Category, &p.ImageURL,
 			&imagesJSON, &sizesJSON, &p.Stock, &p.Description,
 		); err != nil {
+			fmt.Println("❌ Scan error:", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "scan error"})
 			return
 		}
 		if imagesJSON.Valid {
-			_ = json.Unmarshal([]byte(imagesJSON.String), &p.Images)
+			if err := json.Unmarshal([]byte(imagesJSON.String), &p.Images); err != nil {
+				fmt.Println("⚠️ JSON unmarshal images error:", err)
+			}
 		}
 		if sizesJSON.Valid {
-			_ = json.Unmarshal([]byte(sizesJSON.String), &p.Sizes)
+			if err := json.Unmarshal([]byte(sizesJSON.String), &p.Sizes); err != nil {
+				fmt.Println("⚠️ JSON unmarshal sizes error:", err)
+			}
 		}
 		out = append(out, p)
 	}
-	if err := rows.Err(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "rows error"})
-		return
-	}
-
+	fmt.Println("✅ Selesai iterasi, kirim JSON")
 	c.JSON(http.StatusOK, out)
 }
+
 
 func GetProductByID(c *gin.Context) {
 	idStr := c.Param("id")
@@ -113,88 +121,122 @@ func GetProductByID(c *gin.Context) {
 
 
 func CreateProduct(c *gin.Context) {
-	var p Product
-	if err := c.ShouldBindJSON(&p); err != nil {
-		// 🔥 cetak error ke terminal (biar muncul di log Docker)
-		println("JSON BIND ERROR:", err.Error())
+    name := c.PostForm("name")
+    category := c.PostForm("category_id")
+    priceStr := c.PostForm("price")
+    stockStr := c.PostForm("stock")
+    description := c.PostForm("description")
 
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":  "invalid JSON",
-			"detail": err.Error(),
-		})
-		return
-	}
+    price, _ := strconv.ParseFloat(priceStr, 64)
+    stock, _ := strconv.Atoi(stockStr)
 
-	// ubah array jadi JSON string
-	imagesJSON, _ := json.Marshal(p.Images)
-	sizesJSON, _ := json.Marshal(p.Sizes)
+    // Ambil file-file baru
+    form, _ := c.MultipartForm()
+    files := form.File["images"]
 
-	query := `
-		INSERT INTO products (name, price, category_id, image_url, images, sizes, stock, description)
-		VALUES (?, ?, (SELECT id FROM categories WHERE name = ? LIMIT 1), ?, ?, ?, ?, ?)
-	`
-	res, err := db.DB.Exec(query,
-		p.Name, p.Price, p.Category, p.ImageURL,
-		string(imagesJSON), string(sizesJSON), p.Stock, p.Description,
-	)
+    var uploadedPaths []string
+    for _, file := range files {
+        filename := strconv.FormatInt(time.Now().UnixNano(), 10) + "_" + file.Filename
+        savePath := "./images/" + filename
+        if err := c.SaveUploadedFile(file, savePath); err != nil {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+            return
+        }
+        uploadedPaths = append(uploadedPaths, "http://localhost:5000/images/"+filename)
+    }
+
+    // Ambil existing images (kalau ada)
+    existingImages := c.PostFormArray("existingImages")
+    allImages := append(existingImages, uploadedPaths...)
+
+    // Masukkan ke DB
+    imagesJSON, _ := json.Marshal(allImages)
+
+    query := `
+        INSERT INTO products (name, price, category_id, image_url, images, stock, description)
+        VALUES (?, ?, (SELECT id FROM categories WHERE id = ? LIMIT 1), ?, ?, ?, ?)
+    `
+    res, err := db.DB.Exec(query,
+        name, price, category,
+        allImages[0], // set image_url dari gambar pertama
+        string(imagesJSON), stock, description,
+    )
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+
+    id, _ := res.LastInsertId()
+	// Ambil nama kategori dari DB
+	var categoryName string
+	err = db.DB.QueryRow("SELECT name FROM categories WHERE id = ? OR name = ? LIMIT 1", category, category).Scan(&categoryName)
 	if err != nil {
-		// 🔥 print juga kalau SQL error
-		println("SQL ERROR:", err.Error())
-
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		categoryName = "Unknown"
 	}
 
-	id, _ := res.LastInsertId()
-	p.ID = id
-
-	c.JSON(http.StatusCreated, p)
+    c.JSON(http.StatusCreated, gin.H{
+    "id":          id,
+    "name":        name,
+    "price":       price,
+    "stock":       stock,
+    "category":    categoryName,
+    "description": description,
+    "images":      allImages,
+    })
 }
 
 
 
 func UpdateProduct(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
-		return
-	}
+    idStr := c.Param("id")
+    id, _ := strconv.ParseInt(idStr, 10, 64)
 
-	var p Product
-	if err := c.ShouldBindJSON(&p); err != nil {
-		// 🔍 Debug log: tampilkan isi body JSON yang dikirim frontend
-		body, _ := io.ReadAll(c.Request.Body)
-		println("BODY:", string(body))
+    name := c.PostForm("name")
+    category := c.PostForm("category_id")
+    priceStr := c.PostForm("price")
+    stockStr := c.PostForm("stock")
+    description := c.PostForm("description")
 
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":  "invalid JSON",
-			"detail": err.Error(),
-		})
-		return
-	}
+    price, _ := strconv.ParseFloat(priceStr, 64)
+    stock, _ := strconv.Atoi(stockStr)
 
-	// ubah array ke JSON string untuk disimpan di DB
-	imagesJSON, _ := json.Marshal(p.Images)
-	sizesJSON, _ := json.Marshal(p.Sizes)
+    form, _ := c.MultipartForm()
+    files := form.File["images"]
 
-	query := `
-		UPDATE products
-		SET name = ?, price = ?, category_id = (SELECT id FROM categories WHERE name = ? LIMIT 1),
-			image_url = ?, images = ?, sizes = ?, stock = ?, description = ?
-		WHERE id = ?
-	`
-	_, err = db.DB.Exec(query,
-		p.Name, p.Price, p.Category, p.ImageURL,
-		string(imagesJSON), string(sizesJSON), p.Stock, p.Description, id,
-	)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "db update error"})
-		return
-	}
+    var uploadedPaths []string
+    for _, file := range files {
+        filename := strconv.FormatInt(time.Now().UnixNano(), 10) + "_" + file.Filename
+        savePath := "./images/" + filename
+        if err := c.SaveUploadedFile(file, savePath); err != nil {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+            return
+        }
+        uploadedPaths = append(uploadedPaths, "http://localhost:5000/images/"+filename)
+    }
 
-	c.JSON(http.StatusOK, gin.H{"message": "product updated"})
+    // Ambil existingImages dari form
+    existingImages := c.PostFormArray("existingImages")
+    allImages := append(existingImages, uploadedPaths...)
+
+    imagesJSON, _ := json.Marshal(allImages)
+
+    query := `
+        UPDATE products
+        SET name = ?, price = ?, category_id = (SELECT id FROM categories WHERE id = ? LIMIT 1),
+            image_url = ?, images = ?, stock = ?, description = ?
+        WHERE id = ?
+    `
+    _, err := db.DB.Exec(query,
+        name, price, category, allImages[0], string(imagesJSON), stock, description, id,
+    )
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"message": "✅ Produk berhasil diperbarui", "images": allImages})
 }
+
 
 
 func DeleteProduct(c *gin.Context) {

@@ -12,6 +12,8 @@ services:
       - DB_USER=pbpuser
       - DB_PASSWORD=pbppass
       - DB_NAME=pbpdb
+    volumes:
+      - ./backend/images:/app/images
 
   frontend:
     build:

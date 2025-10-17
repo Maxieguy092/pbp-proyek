@@ -109,15 +109,18 @@ export default function ProductForm() {
 
 
 
-  const save = (e) => {
+  const save = async (e) => {
     e.preventDefault();
-    if (!validate()) return; // stop kalau invalid
-    
+    if (!validate()) return;
+
+    const finalForm = { ...form };
+
     if (isEdit) {
-      updateProduct(id, form);
+      await updateProduct(id, finalForm);
     } else {
-      addProduct(form);
+      await addProduct(finalForm);
     }
+
     nav("/admin/products");
   };
 
@@ -137,9 +140,16 @@ export default function ProductForm() {
         price: existing.price || 0,
         stock: existing.stock || 0,
         description: existing.description || "",
-        images: (existing.images || []).map((img) =>
-          typeof img === "string" ? { url: img } : img
-        ),
+        images: (existing.images || []).map((img) => {
+          if (typeof img === "string") {
+            // Tambah base URL supaya bisa ditampilkan
+            const fullUrl = img.startsWith("http")
+              ? img
+              : `http://localhost:5000${img}`;
+            return { url: fullUrl };
+          }
+          return img;
+        }),
       });
     }
   }, [isEdit, existing]);
@@ -187,10 +197,10 @@ export default function ProductForm() {
                 } focus:border-[#3971b8]`}
               >
                 <option value="">— Choose —</option>
-                <option>Shirts</option>
-                <option>T-Shirts</option>
-                <option>Pants</option>
-                <option>Outerwear</option>
+                <option value="1">Shirts</option>
+                <option value="2">T-Shirts</option>
+                <option value="3">Pants</option>
+                <option value="4">Outerwear</option>
               </select>
               {errors.category && (
                 <p className="text-sm text-red-600 mt-1">{errors.category}</p>
@@ -286,11 +296,17 @@ export default function ProductForm() {
                 <div className="mt-4 flex flex-wrap gap-4">
                   {form.images.map((img, i) => (
                     <div key={i} className="relative w-28 h-20">
-                      <img
-                        src={img.url || img}
-                        alt={`preview-${i}`}
-                        className="w-full h-full object-cover rounded-xl border border-[#d9d9d9]"
-                      />
+                    <img
+                      src={
+                        img.url
+                          ? img.url 
+                          : img.startsWith("http")
+                          ? img 
+                          : `http://localhost:5000${img}` 
+                      }
+                      alt={`preview-${i}`}
+                      className="w-full h-full object-cover rounded"
+                    />
                       <button
                         type="button"
                         onClick={() => removeImage(i)}
