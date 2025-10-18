@@ -14,15 +14,20 @@ import (
 
 
 type Product struct {
-	ID          int64    `json:"id"`
-	Name        string   `json:"name"`
-	Price       float64  `json:"price"`
-	Category    string   `json:"category"`
-	ImageURL    string   `json:"imageUrl"`
-	Images      []string `json:"images"`
-	Sizes       []string `json:"sizes"`
-	Stock       int      `json:"stock"`
-	Description string   `json:"description"`
+	ID          int64           `json:"id"`
+	Name        string          `json:"name"`
+	Price       float64         `json:"price"`
+	Category    string          `json:"category"`
+	ImageURL    string          `json:"imageUrl"`
+	Images      []string        `json:"images"`
+	Sizes       []SizeOption    `json:"sizes"` // ⬅️ ubah ke struct baru
+	Stock       int             `json:"stock"`
+	Description string          `json:"description"`
+}
+
+type SizeOption struct {
+	Size  string `json:"size"`
+	Stock int    `json:"stock"`
 }
 
 func GetProducts(c *gin.Context) {
@@ -122,15 +127,27 @@ func GetProductByID(c *gin.Context) {
 
 func CreateProduct(c *gin.Context) {
     name := c.PostForm("name")
-    category := c.PostForm("category_id")
+    category := c.PostForm("category_id") // bisa nama atau id
     priceStr := c.PostForm("price")
-    stockStr := c.PostForm("stock")
     description := c.PostForm("description")
 
-    price, _ := strconv.ParseFloat(priceStr, 64)
-    stock, _ := strconv.Atoi(stockStr)
+    // 🔹 Ambil sizes dari form (frontend kirim JSON string)
+    sizesStr := c.PostForm("sizes")
+    var sizes []map[string]interface{}
+    var totalStock int
+    if sizesStr != "" {
+        if err := json.Unmarshal([]byte(sizesStr), &sizes); err == nil {
+            for _, s := range sizes {
+                if stockVal, ok := s["stock"].(float64); ok {
+                    totalStock += int(stockVal)
+                }
+            }
+        }
+    }
 
-    // Ambil file-file baru
+    price, _ := strconv.ParseFloat(priceStr, 64)
+
+    // 🔹 Upload file-file baru
     form, _ := c.MultipartForm()
     files := form.File["images"]
 
@@ -145,46 +162,55 @@ func CreateProduct(c *gin.Context) {
         uploadedPaths = append(uploadedPaths, "http://localhost:5000/images/"+filename)
     }
 
-    // Ambil existing images (kalau ada)
+    // 🔹 Ambil existing images (kalau ada)
     existingImages := c.PostFormArray("existingImages")
     allImages := append(existingImages, uploadedPaths...)
 
-    // Masukkan ke DB
     imagesJSON, _ := json.Marshal(allImages)
+    sizesJSON, _ := json.Marshal(sizes)
 
+    // 🔹 Cari category ID dari nama atau ID
+    var categoryID int
+    err := db.DB.QueryRow(`
+        SELECT id FROM categories WHERE id = ? OR name = ? LIMIT 1
+    `, category, category).Scan(&categoryID)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "kategori tidak ditemukan"})
+        return
+    }
+
+    // 🔹 Masukkan ke DB
     query := `
-        INSERT INTO products (name, price, category_id, image_url, images, stock, description)
-        VALUES (?, ?, (SELECT id FROM categories WHERE id = ? LIMIT 1), ?, ?, ?, ?)
+        INSERT INTO products (name, price, category_id, image_url, images, sizes, stock, description)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `
     res, err := db.DB.Exec(query,
-        name, price, category,
-        allImages[0], // set image_url dari gambar pertama
-        string(imagesJSON), stock, description,
+        name, price, categoryID,
+        allImages[0], string(imagesJSON), string(sizesJSON), totalStock, description,
     )
+
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
     }
 
     id, _ := res.LastInsertId()
-	// Ambil nama kategori dari DB
-	var categoryName string
-	err = db.DB.QueryRow("SELECT name FROM categories WHERE id = ? OR name = ? LIMIT 1", category, category).Scan(&categoryName)
-	if err != nil {
-		categoryName = "Unknown"
-	}
+
+    // 🔹 Ambil nama kategori dari DB
+    var categoryName string
+    _ = db.DB.QueryRow("SELECT name FROM categories WHERE id = ?", categoryID).Scan(&categoryName)
 
     c.JSON(http.StatusCreated, gin.H{
-    "id":          id,
-    "name":        name,
-    "price":       price,
-    "stock":       stock,
-    "category":    categoryName,
-    "description": description,
-    "images":      allImages,
+        "id":          id,
+        "name":        name,
+        "price":       price,
+        "stock":       totalStock,
+        "category":    categoryName,
+        "description": description,
+        "images":      allImages,
+        "sizes":       sizes,
     })
 }
-
 
 
 func UpdateProduct(c *gin.Context) {
@@ -192,14 +218,27 @@ func UpdateProduct(c *gin.Context) {
     id, _ := strconv.ParseInt(idStr, 10, 64)
 
     name := c.PostForm("name")
-    category := c.PostForm("category_id")
+    category := c.PostForm("category_id") // bisa id atau nama
     priceStr := c.PostForm("price")
-    stockStr := c.PostForm("stock")
     description := c.PostForm("description")
 
     price, _ := strconv.ParseFloat(priceStr, 64)
-    stock, _ := strconv.Atoi(stockStr)
 
+    // 🔹 Ambil sizes dari form
+    sizesStr := c.PostForm("sizes")
+    var sizes []map[string]interface{}
+    var totalStock int
+    if sizesStr != "" {
+        if err := json.Unmarshal([]byte(sizesStr), &sizes); err == nil {
+            for _, s := range sizes {
+                if stockVal, ok := s["stock"].(float64); ok {
+                    totalStock += int(stockVal)
+                }
+            }
+        }
+    }
+
+    // 🔹 Upload gambar baru (jika ada)
     form, _ := c.MultipartForm()
     files := form.File["images"]
 
@@ -214,20 +253,31 @@ func UpdateProduct(c *gin.Context) {
         uploadedPaths = append(uploadedPaths, "http://localhost:5000/images/"+filename)
     }
 
-    // Ambil existingImages dari form
+    // 🔹 Ambil existingImages dari form
     existingImages := c.PostFormArray("existingImages")
     allImages := append(existingImages, uploadedPaths...)
 
     imagesJSON, _ := json.Marshal(allImages)
+    sizesJSON, _ := json.Marshal(sizes)
 
+    // 🔹 Dapatkan ID kategori (dari id atau nama)
+    var categoryID int
+    err := db.DB.QueryRow(`
+        SELECT id FROM categories WHERE id = ? OR name = ? LIMIT 1
+    `, category, category).Scan(&categoryID)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "kategori tidak ditemukan"})
+        return
+    }
+
+    // 🔹 Jalankan update
     query := `
         UPDATE products
-        SET name = ?, price = ?, category_id = (SELECT id FROM categories WHERE id = ? LIMIT 1),
-            image_url = ?, images = ?, stock = ?, description = ?
+        SET name = ?, price = ?, category_id = ?, image_url = ?, images = ?, sizes = ?, stock = ?, description = ?
         WHERE id = ?
     `
-    _, err := db.DB.Exec(query,
-        name, price, category, allImages[0], string(imagesJSON), stock, description, id,
+    _, err = db.DB.Exec(query,
+        name, price, categoryID, allImages[0], string(imagesJSON), string(sizesJSON), totalStock, description, id,
     )
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

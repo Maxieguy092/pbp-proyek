@@ -31,10 +31,18 @@ export function ProductProvider({ children }) {
     try {
       const formData = new FormData();
       formData.append("name", newProduct.name);
-      formData.append("category_id", newProduct.category);
+      formData.append("category_id", newProduct.category_id || newProduct.category);
       formData.append("price", newProduct.price);
       formData.append("stock", newProduct.stock);
       formData.append("description", newProduct.description);
+
+      if (newProduct.sizes && newProduct.sizes.length > 0) {
+        const formattedSizes = newProduct.sizes.map((s) => ({
+          size: s.size,
+          stock: Number(s.stock) || 0,
+        }));
+        formData.append("sizes", JSON.stringify(formattedSizes));
+      }
 
       // Tambahkan file gambar (maksimal 4)
       newProduct.images.forEach((img) => {
@@ -45,7 +53,7 @@ export function ProductProvider({ children }) {
 
       const res = await fetch("http://localhost:5000/api/products", {
         method: "POST",
-        body: formData, // ⬅️ tanpa headers JSON!
+        body: formData, 
       });
 
       const data = await res.json();
@@ -60,11 +68,18 @@ export function ProductProvider({ children }) {
     try {
       const formData = new FormData();
       formData.append("name", updatedProduct.name);
-      formData.append("category_id", updatedProduct.category);
+      formData.append("category_id", updatedProduct.category_id || updatedProduct.category);
       formData.append("price", updatedProduct.price);
       formData.append("stock", updatedProduct.stock);
       formData.append("description", updatedProduct.description);
 
+      if (updatedProduct.sizes && updatedProduct.sizes.length > 0) {
+        const formattedSizes = updatedProduct.sizes.map((s) => ({
+          size: s.size,
+          stock: Number(s.stock) || 0,
+        }));
+        formData.append("sizes", JSON.stringify(formattedSizes));
+      }
       updatedProduct.images.forEach((img) => {
         if (img.file) {
           formData.append("images", img.file);
