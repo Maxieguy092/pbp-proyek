@@ -31,7 +31,6 @@ type SizeOption struct {
 }
 
 func GetProducts(c *gin.Context) {
-	fmt.Println("➡️ Mulai GetProducts")
 
 	category := c.Query("category")
 
@@ -42,21 +41,18 @@ func GetProducts(c *gin.Context) {
 	`
 	args := []any{}
 	if category != "" {
-			query += " WHERE c.name = ?"
-			args = append(args, category)
+		query += " WHERE c.name = ?"
+		args = append(args, category)
 	}
-
-	fmt.Println("📡 Query:", query)
 
 	rows, err := db.DB.Query(query, args...)
 	if err != nil {
-		fmt.Println("❌ DB Query error:", err)
+		// fmt.Println("❌ DB Query error:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "db query error"})
 		return
 	}
 	defer rows.Close()
-
-	fmt.Println("✅ Query jalan, mulai iterasi")
+	
 	var out []Product
 	for rows.Next() {
 		var p Product
@@ -65,23 +61,30 @@ func GetProducts(c *gin.Context) {
 			&p.ID, &p.Name, &p.Price, &p.Category, &p.ImageURL,
 			&imagesJSON, &sizesJSON, &p.Stock, &p.Description,
 		); err != nil {
-			fmt.Println("❌ Scan error:", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "scan error"})
 			return
 		}
 		if imagesJSON.Valid {
 			if err := json.Unmarshal([]byte(imagesJSON.String), &p.Images); err != nil {
-				fmt.Println("⚠️ JSON unmarshal images error:", err)
 			}
 		}
+
 		if sizesJSON.Valid {
-			if err := json.Unmarshal([]byte(sizesJSON.String), &p.Sizes); err != nil {
-				fmt.Println("⚠️ JSON unmarshal sizes error:", err)
+			// pertama coba decode langsung
+			err := json.Unmarshal([]byte(sizesJSON.String), &p.Sizes)
+			if err != nil {
+				// kalau gagal, mungkin double-encoded string
+				var temp string
+				if err2 := json.Unmarshal([]byte(sizesJSON.String), &temp); err2 == nil {
+					_ = json.Unmarshal([]byte(temp), &p.Sizes)
+				} else {
+					fmt.Println("⚠️ JSON unmarshal sizes error:", err)
+				}
 			}
 		}
+				
 		out = append(out, p)
 	}
-	fmt.Println("✅ Selesai iterasi, kirim JSON")
 	c.JSON(http.StatusOK, out)
 }
 
@@ -116,9 +119,21 @@ func GetProductByID(c *gin.Context) {
 	if imagesJSON.Valid {
 		_ = json.Unmarshal([]byte(imagesJSON.String), &p.Images)
 	}
+	
 	if sizesJSON.Valid {
-		_ = json.Unmarshal([]byte(sizesJSON.String), &p.Sizes)
+		// pertama coba decode langsung
+		err := json.Unmarshal([]byte(sizesJSON.String), &p.Sizes)
+		if err != nil {
+			// kalau gagal, mungkin double-encoded string
+			var temp string
+			if err2 := json.Unmarshal([]byte(sizesJSON.String), &temp); err2 == nil {
+				_ = json.Unmarshal([]byte(temp), &p.Sizes)
+			} else {
+				fmt.Println("⚠️ JSON unmarshal sizes error:", err)
+			}
+		}
 	}
+
 
 	c.JSON(http.StatusOK, p)
 }
@@ -167,7 +182,12 @@ func CreateProduct(c *gin.Context) {
     allImages := append(existingImages, uploadedPaths...)
 
     imagesJSON, _ := json.Marshal(allImages)
-    sizesJSON, _ := json.Marshal(sizes)
+	
+	var sizesData []map[string]interface{}
+	_ = json.Unmarshal([]byte(sizesStr), &sizesData)
+	sizesJSONBytes, _ := json.Marshal(sizesData)
+	sizesJSON := string(sizesJSONBytes)
+
 
     // 🔹 Cari category ID dari nama atau ID
     var categoryID int
@@ -257,8 +277,14 @@ func UpdateProduct(c *gin.Context) {
     existingImages := c.PostFormArray("existingImages")
     allImages := append(existingImages, uploadedPaths...)
 
-    imagesJSON, _ := json.Marshal(allImages)
-    sizesJSON, _ := json.Marshal(sizes)
+	imagesJSON, _ := json.Marshal(allImages)
+
+	// pastikan sizes disimpan sebagai JSON array, bukan string JSON
+	var sizesData []map[string]interface{}
+	_ = json.Unmarshal([]byte(sizesStr), &sizesData)
+	sizesJSONBytes, _ := json.Marshal(sizesData)
+	sizesJSON := string(sizesJSONBytes)
+
 
     // 🔹 Dapatkan ID kategori (dari id atau nama)
     var categoryID int
