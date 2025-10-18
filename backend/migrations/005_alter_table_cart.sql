@@ -1,0 +1,2 @@
+ALTER TABLE cart_items
+ADD COLUMN variant VARCHAR(50) NULL AFTER qty;

@@ -66,11 +66,13 @@ type CreateOrderRequest struct {
 		ID    int     `json:"id"`
 		Qty   int     `json:"qty"`
 		Price float64 `json:"price"`
+		Variant string  `json:"variant"`
 	} `json:"items"`
 
 	// Total harga
 	Total float64 `json:"total"`
 }
+
 
 func CreateOrder(c *gin.Context) {
 	// Ambil userID dari middleware
@@ -82,7 +84,6 @@ func CreateOrder(c *gin.Context) {
 
 	userID, ok := userIDInterface.(int)
 	if !ok {
-		// Ini adalah pengaman jika terjadi kesalahan tak terduga pada sesi
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID type in session"})
 		return
 	}
@@ -93,6 +94,7 @@ func CreateOrder(c *gin.Context) {
 		return
 	}
 
+	// (Validasi lainnya tetap sama)
 	if strings.TrimSpace(req.ShippingName) == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Shipping name is required"})
 		return
@@ -109,7 +111,7 @@ func CreateOrder(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Order must contain at least one item"})
 		return
 	}
-	
+
 	// Memulai transaksi database
 	tx, err := db.DB.Begin()
 	if err != nil {
@@ -117,9 +119,7 @@ func CreateOrder(c *gin.Context) {
 		return
 	}
 
-	
-
-	// 1. INSERT ke tabel 'orders'
+	// 1. INSERT ke tabel 'orders' (Sama seperti sebelumnya)
 	queryOrder := `
 		INSERT INTO orders 
 		(user_id, total, shipping_name, shipping_email, shipping_phone, status, shipping_option, payment_option, payment_details, address_text)
@@ -134,27 +134,88 @@ func CreateOrder(c *gin.Context) {
 
 	orderID, _ := res.LastInsertId()
 
-	// 2. INSERT ke tabel 'order_items' untuk setiap item
-	queryItem := `
-		INSERT INTO order_items (order_id, product_id, price, qty, subtotal)
-		VALUES (?, ?, ?, ?, ?)
-	`
+	// =========================================================================
+	// BLOK BARU: LOGIKA PENGURANGAN STOK
+	// =========================================================================
 	for _, item := range req.Items {
+		// Langkah A: Ambil data stok saat ini dari DB dan kunci barisnya agar tidak diubah oleh transaksi lain
+		var currentSizesJSON string
+		var currentTotalStock int
+		err := tx.QueryRow("SELECT sizes, stock FROM products WHERE id = ? FOR UPDATE", item.ID).Scan(&currentSizesJSON, &currentTotalStock)
+		if err != nil {
+			tx.Rollback()
+			c.JSON(http.StatusNotFound, gin.H{"error": "Product with ID " + string(rune(item.ID)) + " not found"})
+			return
+		}
+
+		// Langkah B: Unmarshal JSON sizes menjadi slice of struct
+		var sizes []SizeOption
+		if err := json.Unmarshal([]byte(currentSizesJSON), &sizes); err != nil {
+			tx.Rollback()
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse product sizes"})
+			return
+		}
+
+		// Langkah C: Cari varian yang cocok, cek stok, dan kurangi
+		variantFound := false
+		newTotalStock := 0
+		for i := range sizes {
+			if sizes[i].Size == item.Variant {
+				variantFound = true
+				if sizes[i].Stock < item.Qty {
+					// Jika stok tidak cukup, batalkan semua transaksi
+					tx.Rollback()
+					c.JSON(http.StatusBadRequest, gin.H{"error": "Insufficient stock for product variant " + item.Variant})
+					return
+				}
+				// Kurangi stok untuk varian ini
+				sizes[i].Stock -= item.Qty
+			}
+			// Hitung ulang total stok dari semua varian
+			newTotalStock += sizes[i].Stock
+		}
+
+		if !variantFound {
+			tx.Rollback()
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Variant " + item.Variant + " not found for product"})
+			return
+		}
+
+		// Langkah D: Marshal kembali slice yang sudah diupdate ke JSON
+		updatedSizesJSON, err := json.Marshal(sizes)
+		if err != nil {
+			tx.Rollback()
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to serialize product sizes"})
+			return
+		}
+
+		// Langkah E: Update data stok di tabel products
+		_, err = tx.Exec("UPDATE products SET sizes = ?, stock = ? WHERE id = ?", string(updatedSizesJSON), newTotalStock, item.ID)
+		if err != nil {
+			tx.Rollback()
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update product stock"})
+			return
+		}
+
+		// Langkah F: Masukkan item ke order_items (setelah stok dipastikan aman)
+		queryItem := `
+			INSERT INTO order_items (order_id, product_id, price, qty, subtotal)
+			VALUES (?, ?, ?, ?, ?)
+		`
 		subtotal := item.Price * float64(item.Qty)
-		_, err := tx.Exec(queryItem, orderID, item.ID, item.Price, item.Qty, subtotal)
+		_, err = tx.Exec(queryItem, orderID, item.ID, item.Price, item.Qty, subtotal)
 		if err != nil {
 			tx.Rollback()
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save order items"})
 			return
 		}
 	}
+	// =========================================================================
+	// AKHIR BLOK PENGURANGAN STOK
+	// =========================================================================
 
-    // 3. (Opsional tapi direkomendasikan) Kosongkan keranjang belanja pengguna
-    // Logika ini perlu disesuaikan dengan implementasi keranjang Anda.
-    // Contoh: `DELETE FROM cart_items WHERE cart_id = (SELECT id FROM carts WHERE user_id = ?)`
-    // _, err = tx.Exec("DELETE ...", userID)
-    // if err != nil { ... }
-
+	// (Opsional) Kosongkan keranjang (Sama seperti sebelumnya)
+	// tx.Exec("DELETE FROM cart_items WHERE ...")
 
 	// Jika semua berhasil, commit transaksi
 	if err := tx.Commit(); err != nil {
