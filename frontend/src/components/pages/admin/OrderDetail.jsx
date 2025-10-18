@@ -8,16 +8,13 @@ import { formatIDR } from "../../../contexts/CartContext";
 import { fetchOrderById, updateOrderStatus } from "../../../api/orders";
 
 export default function OrderDetail() {
-  // Ambil ID pesanan dari URL
   const { id: orderId } = useParams();
   const navigate = useNavigate();
 
-  // State untuk menyimpan data pesanan, loading, dan error
   const [order, setOrder] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
-  // Opsi untuk dropdown status
   const STATUS_OPTIONS = [
     "Pending",
     "Processing",
@@ -26,14 +23,12 @@ export default function OrderDetail() {
     "Cancelled",
   ];
 
-  // Ambil data dari backend saat komponen dimuat
   useEffect(() => {
     if (!orderId) return;
 
     setLoading(true);
     fetchOrderById(orderId)
       .then((data) => {
-        // Alamat dari backend adalah string JSON, kita parse di sini
         const parsedAddress = JSON.parse(data.address || "{}");
         setOrder({ ...data, addressData: parsedAddress });
       })
@@ -46,12 +41,10 @@ export default function OrderDetail() {
       });
   }, [orderId]);
 
-  // Fungsi untuk mengubah state saat dropdown dipilih
   const handleStatusChange = (e) => {
     setOrder((prev) => ({ ...prev, status: e.target.value }));
   };
 
-  // Fungsi untuk mengirim update status ke backend
   const handleUpdate = () => {
     updateOrderStatus(order.id, order.status)
       .then(() => alert("Status berhasil diupdate!"))
@@ -82,7 +75,6 @@ export default function OrderDetail() {
     );
   }
 
-  // Hitung total harga
   const total = order.items.reduce(
     (sum, item) => sum + item.qty * item.price,
     0
@@ -99,6 +91,7 @@ export default function OrderDetail() {
             <div className="grid grid-cols-2 gap-y-3 gap-x-8">
               <div>
                 <p className="font-semibold">Order Id</p>
+                {/* ID SUDAH DIFORMAT */}
                 <p>ORD-{String(order.id).padStart(3, "0")}</p>
               </div>
               <div className="pl-12">
@@ -112,10 +105,6 @@ export default function OrderDetail() {
               <div className="pl-12">
                 <p className="font-semibold">Email</p>
                 <p>{order.email}</p>
-              </div>
-              <div className="col-span-2">
-                <p className="font-semibold">Phone Number</p>
-                <p>{order.addressData.phone || "-"}</p>
               </div>
             </div>
 
@@ -173,14 +162,44 @@ export default function OrderDetail() {
             </div>
           </div>
 
-          <div className="w-full lg:w-64 border border-[#d3e0a9] bg-[#fbfcee] rounded-lg p-4 text-sm">
-            <p className="font-semibold mb-2">Address</p>
-            <p>{order.addressData.name}</p>
-            <p>{order.addressData.street}</p>
-            <p>{order.addressData.district}</p>
-            <p>{order.addressData.city}</p>
-            <p>{order.addressData.province}</p>
-            <p>{order.addressData.postal}</p>
+          {/* === BLOK BARU UNTUK ALAMAT, PENGIRIMAN & PEMBAYARAN === */}
+          <div className="w-full lg:w-80 space-y-4">
+            <div className="border border-[#d3e0a9] bg-[#fbfcee] rounded-lg p-4 text-sm">
+              <p className="font-semibold mb-2">Delivery Address</p>
+              <p>{order.addressData.name}</p>
+              <p>{order.addressData.street}</p>
+              <p>{order.addressData.district}</p>
+              <p>
+                {order.addressData.city}, {order.addressData.postal}
+              </p>
+              <p>{order.addressData.province}</p>
+            </div>
+            <div className="border border-[#d3e0a9] bg-[#fbfcee] rounded-lg p-4 text-sm">
+              <p className="font-semibold mb-2">Shipping & Payment</p>
+              <div className="space-y-1">
+                <p>
+                  <strong>Recipient:</strong> {order.shippingName}
+                </p>
+                <p>
+                  <strong>Email:</strong> {order.shippingEmail}
+                </p>
+                <p>
+                  <strong>Phone:</strong> {order.shippingPhone}
+                </p>
+                <hr className="my-2 border-[#d3e0a9]" />
+                <p>
+                  <strong>Courier:</strong> {order.shippingOption}
+                </p>
+                <p>
+                  <strong>Payment:</strong> {order.paymentOption}
+                </p>
+                {order.paymentDetails && (
+                  <p>
+                    <strong>Details:</strong> {order.paymentDetails}
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 

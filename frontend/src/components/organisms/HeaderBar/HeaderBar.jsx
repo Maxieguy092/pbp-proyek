@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import SearchDropdown from "../../molecules/SearchDropdown/SearchDropdown";
 import CartDrawer from "../../molecules/CartDrawer/CartDrawer";
 import { useUser } from "../../../contexts/UserContext";
+import { useCart } from "../../../contexts/CartContext";
 
 const IconSearch = (props) => (
   <svg
@@ -58,8 +59,8 @@ const IconUser = (props) => (
 
 export default function HeaderBar() {
   const [openSearch, setOpenSearch] = useState(false);
-  const [openCart, setOpenCart] = useState(false);
   const { user } = useUser();
+  const { openCart, count } = useCart();
 
   // console.log("user from useUser()", user);
 
@@ -84,11 +85,17 @@ export default function HeaderBar() {
 
             {/* 👉 CART membuka drawer */}
             <button
-              aria-label="Keranjang"
-              onClick={() => setOpenCart(true)}
-              className="p-2 rounded-xl hover:bg-[#e1eac4] transition"
+              aria-label={`Keranjang dengan ${count} item`}
+              onClick={openCart}
+              className="p-2 rounded-xl hover:bg-[#e1eac4] transition relative"
             >
               <IconCart />
+              {/* Bonus: Tampilkan jumlah item di keranjang */}
+              {count > 0 && (
+                <span className="absolute -top-1 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-[#fbfcee] text-xs text-[#3971b8]">
+                  {count}
+                </span>
+              )}
             </button>
 
             <Link
@@ -104,7 +111,7 @@ export default function HeaderBar() {
       <div className="w-full bg-[#fbfcee] border-t border-[#d3e0a9]" />
 
       <SearchDropdown open={openSearch} onClose={() => setOpenSearch(false)} />
-      <CartDrawer open={openCart} onClose={() => setOpenCart(false)} />
+      <CartDrawer />
     </header>
   );
 }

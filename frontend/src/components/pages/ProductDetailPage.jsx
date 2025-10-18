@@ -8,6 +8,7 @@ import { useCart } from "../../contexts/CartContext";
 import { fetchProductById } from "../../api/products";
 import { useUser } from "../../contexts/UserContext";
 import LoginPromptModal from "../molecules/LoginPromptModal/LoginPromptModal";
+import AddToCartSuccessModal from "../molecules/AddToCartSuccessModal/AddToCartSuccessModal";
 
 // Formatter IDR
 const formatIDR = (n) =>
@@ -21,9 +22,12 @@ const FALLBACK_IMG = "/images/fallback.jpg";
 
 export default function ProductDetailPage() {
   const { id } = useParams();
-  const { add } = useCart();
+  const { add, openCart } = useCart();
   const { user, loading: userLoading } = useUser(); // Ambil status user
   const [showLoginModal, setShowLoginModal] = useState(false); // State untuk modal
+
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [addedProductInfo, setAddedProductInfo] = useState(null); // Untuk menyimpan info produk
 
   // --- data state ---
   const [loading, setLoading] = useState(true);
@@ -102,12 +106,10 @@ export default function ProductDetailPage() {
     : [product.imageUrl].filter(Boolean);
 
   const onAddToCart = () => {
-    // Jika belum login, tampilkan modal, jangan lanjutkan
     if (!user) {
       setShowLoginModal(true);
       return;
     }
-
     if (outOfStock) {
       alert("Stok habis");
       return;
@@ -120,8 +122,21 @@ export default function ProductDetailPage() {
       alert(`Qty harus 1–${maxQty}`);
       return;
     }
+
+    // Panggil fungsi 'add' dari context
     add(product, qty, size);
-    alert("Ditambahkan ke keranjang (demo)");
+
+    // Hapus alert lama
+    // alert("Ditambahkan ke keranjang (demo)");
+
+    // Simpan info produk dan kuantitas, lalu tampilkan modal sukses
+    setAddedProductInfo({ ...product, qty });
+    setShowSuccessModal(true);
+  };
+
+  const onViewCartClick = () => {
+    setShowSuccessModal(false); // Tutup modal sukses
+    openCart(); // Buka cart drawer
   };
 
   return (
@@ -130,6 +145,15 @@ export default function ProductDetailPage() {
         open={showLoginModal}
         onClose={() => setShowLoginModal(false)}
       />
+
+      <AddToCartSuccessModal
+        open={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        onViewCart={onViewCartClick} // Teruskan handler baru ke props
+        product={addedProductInfo}
+        qty={addedProductInfo?.qty}
+      />
+
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Kiri: Galeri */}
@@ -243,7 +267,6 @@ export default function ProductDetailPage() {
             <div className="mt-6">
               <button
                 onClick={onAddToCart}
-                // Tambahkan disabled saat userLoading agar tidak bisa diklik sebelum status login diketahui
                 disabled={outOfStock || userLoading}
                 className={`w-full sm:w-64 rounded-xl px-6 py-3 font-medium transition ${
                   outOfStock || userLoading
