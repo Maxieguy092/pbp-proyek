@@ -55,7 +55,7 @@ func GetCart(c *gin.Context) {
 
 	rows, err := db.DB.Query(`
 		SELECT 
-			ci.id, p.id, p.name, p.price, p.image_url, ci.qty, p.stock
+			ci.id, p.id, p.name, p.price, p.image_url, ci.qty, p.stock, ci.variant
 		FROM cart_items ci 
 		JOIN products p ON ci.product_id = p.id 
 		WHERE ci.cart_id = ?
@@ -70,7 +70,7 @@ func GetCart(c *gin.Context) {
 
 	for rows.Next() {
 		var item CartItem
-		if err := rows.Scan(&item.CartItemID, &item.ID, &item.Name, &item.Price, &item.ImageURL, &item.Qty, &item.Stock); err != nil {
+		if err := rows.Scan(&item.CartItemID, &item.ID, &item.Name, &item.Price, &item.ImageURL, &item.Qty, &item.Stock, &item.Variant); err != nil {
 			continue
 		}
 		items = append(items, item)
@@ -88,39 +88,41 @@ func GetCart(c *gin.Context) {
 
 // POST /api/cart/items - Menambah item ke keranjang
 func AddItemToCart(c *gin.Context) {
-	// UBAH BAGIAN INI: Ambil 'user_id' dan konversi ke int
 	userIDInterface, _ := c.Get("user_id")
 	userID := userIDInterface.(int)
-
-	// Gunakan fungsi helper yang baru
 	cartID, err := getOrCreateCartIDByUserID(userID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not process user cart"})
-		return
-	}
+	if err != nil { /* ... */ }
 
+	// UBAH: Tambahkan field Variant di struct request
 	var req struct {
-		ProductID int `json:"productId"`
-		Qty       int `json:"qty"`
+		ProductID int    `json:"productId"`
+		Qty       int    `json:"qty"`
+		Variant   string `json:"variant"` // <-- TAMBAHKAN INI
 	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
-		return
-	}
-	
+	if err := c.ShouldBindJSON(&req); err != nil { /* ... */ }
+
+	// UBAH: Cek item berdasarkan product_id DAN variant
 	var currentQty int
-	err = db.DB.QueryRow("SELECT qty FROM cart_items WHERE cart_id = ? AND product_id = ?", cartID, req.ProductID).Scan(&currentQty)
+	err = db.DB.QueryRow(
+		"SELECT qty FROM cart_items WHERE cart_id = ? AND product_id = ? AND variant = ?",
+		cartID, req.ProductID, req.Variant,
+	).Scan(&currentQty)
 
 	if err == sql.ErrNoRows {
-		_, err = db.DB.Exec("INSERT INTO cart_items (cart_id, product_id, qty) VALUES (?, ?, ?)", cartID, req.ProductID, req.Qty)
+		// UBAH: Sertakan variant saat INSERT
+		_, err = db.DB.Exec(
+			"INSERT INTO cart_items (cart_id, product_id, qty, variant) VALUES (?, ?, ?, ?)",
+			cartID, req.ProductID, req.Qty, req.Variant,
+		)
 	} else {
-		_, err = db.DB.Exec("UPDATE cart_items SET qty = qty + ? WHERE cart_id = ? AND product_id = ?", req.Qty, cartID, req.ProductID)
+		// UBAH: Sertakan variant di klausa WHERE saat UPDATE
+		_, err = db.DB.Exec(
+			"UPDATE cart_items SET qty = qty + ? WHERE cart_id = ? AND product_id = ? AND variant = ?",
+			req.Qty, cartID, req.ProductID, req.Variant,
+		)
 	}
 
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add item to cart"})
-		return
-	}
+	if err != nil { /* ... */ }
 	GetCart(c)
 }
 

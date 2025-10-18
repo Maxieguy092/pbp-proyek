@@ -108,6 +108,7 @@ export default function CheckoutPage() {
         id: item.id,
         qty: item.qty,
         price: item.price,
+        variant: item.variant,
       })),
       total: total,
     };
@@ -118,6 +119,7 @@ export default function CheckoutPage() {
       clearCart();
       navigate("/");
     } catch (error) {
+      console.log(items[0]);
       alert("Gagal membuat pesanan: " + error.message);
     } finally {
       setIsSubmitting(false);
