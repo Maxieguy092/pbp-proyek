@@ -62,7 +62,11 @@ export default function HeaderBar() {
   const { user } = useUser();
   const { openCart, count } = useCart();
 
-  // console.log("user from useUser()", user);
+  const dashboardPath = user
+    ? user.role === "admin"
+      ? "/admin/dashboard" // Jika admin
+      : "/dashboard/profile" // Jika pengguna biasa
+    : "/login";
 
   return (
     <header className="w-full bg-[#c8d69b] sticky top-0 z-50 border-b border-[#d3e0a9] text-[#3971b8]">
@@ -99,7 +103,7 @@ export default function HeaderBar() {
             </button>
 
             <Link
-              to={user ? "/dashboard/profile" : "/login"}
+              to={dashboardPath}
               aria-label="Akun"
               className="p-2 rounded-xl hover:bg-[#e1eac4] transition"
             >

@@ -90,11 +90,15 @@ export default function CartDrawer() {
                   </span>
 
                   <button
-                    onClick={() => {
-                      const max = Number.isFinite(it.stock) ? it.stock : 99;
-                      if (it.qty < max) increment(it.cartItemId);
-                    }}
-                    className="px-3 py-2 hover:bg-[#e1eac4]"
+                    onClick={() => increment(it.cartItemId)}
+                    // UBAH LOGIKA 'disabled' DI BAWAH INI
+                    disabled={it.qty >= it.variantStock} // Gunakan variantStock
+                    className={`px-3 py-2 ${
+                      // Tambahkan style disabled jika stok tercapai
+                      it.qty >= it.variantStock
+                        ? "opacity-50 cursor-not-allowed"
+                        : "hover:bg-[#e1eac4]"
+                    }`}
                     aria-label="Tambah"
                   >
                     +

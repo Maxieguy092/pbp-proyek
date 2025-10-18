@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"database/sql"
 	"encoding/json" // Impor package JSON
 	"net/http"
 	"sort"
@@ -17,6 +18,7 @@ type UserOrderItem struct {
 	ImageURL string  `json:"imageUrl"`
 	Qty      int     `json:"qty"`
 	Price    float64 `json:"price"`
+	Variant  *string `json:"variant,omitempty"`
 }
 
 type UserOrderDetail struct {
@@ -35,6 +37,7 @@ type UserOrderDetail struct {
 
 // GetUserOrders: Mengambil riwayat pesanan untuk user yang sedang login.
 func GetUserOrders(c *gin.Context) {
+	// 1. Ambil userID dari sesi (tidak ada perubahan)
 	userIDInterface, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
@@ -42,14 +45,13 @@ func GetUserOrders(c *gin.Context) {
 	}
 	userID, _ := userIDInterface.(int)
 
-	// 1. Query diubah untuk mengambil kolom baru:
-	// o.address_text, o.shipping_phone, o.payment_details
+	// 2. Query diubah untuk mengambil "oi.variant"
 	query := `
 		SELECT 
 			o.id, o.created_at, o.status, o.total, 
 			o.shipping_name, o.shipping_email, o.payment_option,
 			o.address_text, o.shipping_phone, o.payment_details,
-			oi.qty, p.name, p.image_url, p.price
+			oi.qty, p.name, p.image_url, p.price, oi.variant 
 		FROM orders o
 		JOIN order_items oi ON o.id = oi.order_id
 		JOIN products p ON oi.product_id = p.id
@@ -63,58 +65,64 @@ func GetUserOrders(c *gin.Context) {
 	}
 	defer rows.Close()
 
+	// 3. Proses hasil query
 	ordersMap := make(map[int]*UserOrderDetail)
 	for rows.Next() {
 		var orderID int
 		var createdAt time.Time
-		// 2. Deklarasikan variabel baru untuk menampung data
 		var status, shippingName, shippingEmail, paymentOption, productName, productImageUrl, addressText, shippingPhone, paymentDetails string
 		var total, productPrice float64
 		var productQty int
+		var productVariant sql.NullString // Variabel untuk menampung variant dari DB
 
-		// 3. Sesuaikan urutan Scan dengan urutan SELECT di query
+		// 4. Sesuaikan Scan untuk membaca kolom variant
 		err := rows.Scan(
 			&orderID, &createdAt, &status, &total,
 			&shippingName, &shippingEmail, &paymentOption,
 			&addressText, &shippingPhone, &paymentDetails,
-			&productQty, &productName, &productImageUrl, &productPrice,
+			&productQty, &productName, &productImageUrl, &productPrice, &productVariant,
 		)
 		if err != nil {
-			continue
+			continue // Lewati baris yang error
 		}
 
+		// Buat entri order baru jika belum ada di map
 		if _, ok := ordersMap[orderID]; !ok {
 			ordersMap[orderID] = &UserOrderDetail{
-				ID:            orderID,
-				Date:          createdAt.Format("02 Jan 2006"),
-				Status:        status,
-				Total:         total,
-				ShippingName:  shippingName,
-				ShippingEmail: shippingEmail,
-				PaymentOption: paymentOption,
-				Items:         make([]UserOrderItem, 0),
-				// 4. Masukkan data baru ke dalam struct
+				ID:             orderID,
+				Date:           createdAt.Format("02 Jan 2006"),
+				Status:         status,
+				Total:          total,
+				ShippingName:   shippingName,
+				ShippingEmail:  shippingEmail,
+				PaymentOption:  paymentOption,
+				Items:          make([]UserOrderItem, 0),
 				AddressText:    addressText,
 				ShippingPhone:  shippingPhone,
 				PaymentDetails: paymentDetails,
 			}
 		}
 
-		ordersMap[orderID].Items = append(ordersMap[orderID].Items, UserOrderItem{
+		// 5. Buat objek item dan tambahkan variant jika ada
+		orderItem := UserOrderItem{
 			Name:     productName,
 			ImageURL: productImageUrl,
 			Qty:      productQty,
 			Price:    productPrice,
-		})
+		}
+		if productVariant.Valid {
+			// Jika variant tidak null di DB, assign nilainya
+			orderItem.Variant = &productVariant.String
+		}
+		ordersMap[orderID].Items = append(ordersMap[orderID].Items, orderItem)
 	}
-	
+
+	// 6. Konversi map ke slice untuk respons JSON (tidak ada perubahan)
 	ordersList := make([]UserOrderDetail, 0, len(ordersMap))
-	// Gunakan loop `for _, order := range ordersMap` yang aman untuk pointer
 	ids := make([]int, 0, len(ordersMap))
 	for id := range ordersMap {
 		ids = append(ids, id)
 	}
-	// Sortir untuk memastikan urutan konsisten
 	sort.Slice(ids, func(i, j int) bool {
 		return ids[i] > ids[j] // Urutkan dari ID terbesar (terbaru)
 	})
@@ -316,12 +324,15 @@ func CreateOrder(c *gin.Context) {
 
 		// Langkah F: Masukkan item ke order_items (setelah stok dipastikan aman)
 		queryItem := `
-			INSERT INTO order_items (order_id, product_id, price, qty, subtotal)
-			VALUES (?, ?, ?, ?, ?)
+			INSERT INTO order_items (order_id, product_id, price, qty, variant, subtotal)
+			VALUES (?, ?, ?, ?, ?, ?)
 		`
 		subtotal := item.Price * float64(item.Qty)
-		_, err = tx.Exec(queryItem, orderID, item.ID, item.Price, item.Qty, subtotal)
-		if err != nil {
+        
+        // UBAH EKSEKUSI QUERY DI BAWAH INI
+		_, err = tx.Exec(queryItem, orderID, item.ID, item.Price, item.Qty, item.Variant, subtotal)
+		
+        if err != nil {
 			tx.Rollback()
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save order items"})
 			return

@@ -88,9 +88,9 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	var firstName, lastName, email, psswrd string
-	err := db.DB.QueryRow("SELECT first_name, last_name, email, password_hash FROM users WHERE email = ?", req.Username).Scan(&firstName, &lastName, &email, &psswrd)
-
+	var firstName, lastName, email, psswrd, role string // <-- Tambah variabel 'role'
+	err := db.DB.QueryRow("SELECT first_name, last_name, email, password_hash, role FROM users WHERE email = ?", req.Username).Scan(&firstName, &lastName, &email, &psswrd, &role) // <-- Tambah 'role' di query dan Scan
+	
 	if err == sql.ErrNoRows {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not found"})
 		return
@@ -119,6 +119,7 @@ func Login(c *gin.Context) {
 			"firstName": firstName,
 			"lastName":  lastName,
 			"email":     email,
+			"role":      role, // <-- TAMBAHKAN BARIS INI
 		},
 	})
 }

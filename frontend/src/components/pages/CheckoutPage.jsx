@@ -1,23 +1,23 @@
-// 📁 CheckoutPage.jsx
+// 📁 src/components/pages/CheckoutPage.jsx
 import { useState } from "react";
-import { useNavigate } from "react-router-dom"; // Impor useNavigate
+import { useNavigate } from "react-router-dom";
 import MainLayout from "../templates/MainLayout/MainLayout";
 import { useCart, formatIDR } from "../../contexts/CartContext";
-import { createOrder } from "../../api/orders"; // Impor createOrder
+import { createOrder } from "../../api/orders";
+import InfoModal from "../molecules/InfoModal/InfoModal";
 
 export default function CheckoutPage() {
-  const navigate = useNavigate(); // Inisialisasi navigate
-  // Panggil useCart untuk mendapatkan data & fungsi keranjang
+  const navigate = useNavigate();
   const { items, total, clear: clearCart } = useCart();
 
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
-    address: "", // Ini akan menjadi 'street'
+    address: "",
     district: "",
     city: "",
-    state: "", // Ini akan menjadi 'province'
-    zip: "", // Ini akan menjadi 'postal'
+    state: "",
+    zip: "",
     email: "",
     phone: "",
     shipping: "JNE",
@@ -28,55 +28,67 @@ export default function CheckoutPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Fungsi untuk menutup modal (bisa digunakan ulang)
+  const closeModal = () => setModalState((prev) => ({ ...prev, open: false }));
+
+  const [modalState, setModalState] = useState({
+    open: false,
+    type: "warning",
+    title: "",
+    message: "",
+    onClose: closeModal, // Gunakan fungsi closeModal sebagai default
+  });
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // --- FUNGSI HANDLE SUBMIT YANG DIPERBARUI ---
   const handleSubmit = async () => {
-    // =======================================================
-    // BLOK VALIDASI BARU
-    // =======================================================
+    // Validasi sekarang akan menggunakan closeModal yang benar
     if (items.length === 0) {
-      alert("Keranjang Anda kosong.");
-      return; // Hentikan fungsi
-    }
-
-    // Gunakan .trim() untuk menghapus spasi di awal/akhir
-    if (!formData.firstName.trim()) {
-      alert("Nama depan tidak boleh kosong.");
+      setModalState({
+        open: true,
+        type: "warning",
+        title: "Keranjang Kosong",
+        message: "Anda tidak bisa checkout dengan keranjang kosong.",
+        onClose: closeModal,
+      });
       return;
     }
-    if (!formData.lastName.trim()) {
-      alert("Nama belakang tidak boleh kosong.");
+    const requiredFields = [
+      "firstName",
+      "lastName",
+      "address",
+      "city",
+      "state",
+      "zip",
+      "email",
+      "phone",
+    ];
+    if (requiredFields.some((field) => !formData[field].trim())) {
+      setModalState({
+        open: true,
+        type: "warning",
+        title: "Data Belum Lengkap",
+        message: "Harap isi semua kolom pengiriman dan kontak.",
+        onClose: closeModal,
+      });
       return;
     }
-    if (!formData.address.trim()) {
-      alert("Alamat tidak boleh kosong.");
-      return;
-    }
-    if (!formData.email.trim()) {
-      alert("Email tidak boleh kosong.");
-      return;
-    }
-    if (!formData.phone.trim()) {
-      alert("Nomor telepon tidak boleh kosong.");
-      return;
-    }
-
-    // Validasi kondisional untuk Kartu Kredit
     if (formData.payment === "Credit Card" && !formData.cardNumber.trim()) {
-      alert("Nomor kartu tidak boleh kosong.");
+      setModalState({
+        open: true,
+        type: "warning",
+        title: "Informasi Pembayaran Kurang",
+        message: "Harap isi nomor kartu kredit Anda.",
+        onClose: closeModal,
+      });
       return;
     }
-    // =======================================================
-    // AKHIR BLOK VALIDASI
-    // =======================================================
 
     setIsSubmitting(true);
 
-    // 1. Siapkan data alamat dalam format JSON (tidak ada perubahan)
     const addressData = {
       name: `${formData.firstName} ${formData.lastName}`,
       street: formData.address,
@@ -87,22 +99,19 @@ export default function CheckoutPage() {
       phone: formData.phone,
     };
 
-    // 2. Siapkan detail pembayaran (tidak ada perubahan)
     let paymentDetails = null;
-    if (formData.payment === "Credit Card") {
+    if (formData.payment === "Credit Card")
       paymentDetails = formData.cardNumber;
-    } else if (formData.payment === "Bank Transfer") {
+    else if (formData.payment === "Bank Transfer")
       paymentDetails = formData.bank;
-    }
 
-    // 3. Siapkan payload lengkap untuk API (tidak ada perubahan)
     const orderPayload = {
       shippingName: `${formData.firstName} ${formData.lastName}`,
       shippingEmail: formData.email,
       shippingPhone: formData.phone,
       shippingOption: formData.shipping,
       paymentOption: formData.payment,
-      paymentDetails: paymentDetails,
+      paymentDetails,
       addressText: JSON.stringify(addressData),
       items: items.map((item) => ({
         id: item.id,
@@ -110,17 +119,34 @@ export default function CheckoutPage() {
         price: item.price,
         variant: item.variant,
       })),
-      total: total,
+      total,
     };
 
     try {
       const result = await createOrder(orderPayload);
-      alert(`Pesanan berhasil dibuat! Order ID: ${result.orderId}`);
-      clearCart();
-      navigate("/");
+
+      // =======================================================
+      // PERBAIKAN #2: Ubah onClose untuk modal sukses
+      // =======================================================
+      setModalState({
+        open: true,
+        type: "success",
+        title: "Pesanan Berhasil Dibuat!",
+        message: `Terima kasih! ID Pesanan Anda adalah #${result.orderId}.`,
+        onClose: () => {
+          clearCart();
+          navigate("/dashboard/orders"); // <-- Arahkan ke halaman riwayat pesanan
+        },
+      });
     } catch (error) {
-      console.log(items[0]);
-      alert("Gagal membuat pesanan: " + error.message);
+      // Pastikan modal error juga menggunakan closeModal yang benar
+      setModalState({
+        open: true,
+        type: "error",
+        title: "Gagal Membuat Pesanan",
+        message: error.message || "Terjadi kesalahan. Silakan coba lagi.",
+        onClose: closeModal,
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -128,9 +154,18 @@ export default function CheckoutPage() {
 
   return (
     <MainLayout>
+      <InfoModal
+        open={modalState.open}
+        onClose={modalState.onClose}
+        type={modalState.type}
+        title={modalState.title}
+        message={modalState.message}
+      />
+
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+        {/* ... sisa JSX dari CheckoutPage tidak berubah ... */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-          {/* === KIRI: RINGKASAN PESANAN (SUDAH DITAMBAHKAN) === */}
+          {/* ... Order Summary ... */}
           <div className="space-y-6">
             <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
             <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
@@ -178,8 +213,7 @@ export default function CheckoutPage() {
               </div>
             )}
           </div>
-
-          {/* === KANAN: FORMULIR === */}
+          {/* ... Form ... */}
           <div className="space-y-10">
             {/* Delivery Section */}
             <section>
@@ -240,7 +274,6 @@ export default function CheckoutPage() {
                 </div>
               </div>
             </section>
-
             {/* Contact Information Section */}
             <section>
               <h2 className="text-xl font-semibold mb-4">
@@ -264,7 +297,6 @@ export default function CheckoutPage() {
                 />
               </div>
             </section>
-
             {/* Shipping Option Section */}
             <section>
               <h2 className="text-xl font-semibold mb-4">Shipping Option</h2>
@@ -279,7 +311,6 @@ export default function CheckoutPage() {
                 <option value="GoSend">GoSend</option>
               </select>
             </section>
-
             {/* Payment Section */}
             <section>
               <h2 className="text-xl font-semibold mb-4">Payment</h2>
@@ -293,7 +324,6 @@ export default function CheckoutPage() {
                 <option value="Bank Transfer">Bank Transfer</option>
                 <option value="QRIS">QRIS</option>
               </select>
-
               {formData.payment === "Credit Card" && (
                 <div className="mt-4">
                   <input
@@ -320,8 +350,6 @@ export default function CheckoutPage() {
                 </div>
               )}
             </section>
-
-            {/* Update button untuk menangani state isSubmitting */}
             <div className="flex justify-end">
               <button
                 onClick={handleSubmit}
@@ -334,18 +362,7 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
-
-      <style>{`
-        .input {
-          width: 100%;
-          border-radius: 0.75rem;
-          border: 1px solid #e5e8d2;
-          background: #fbfcee;
-          padding: 0.75rem 1rem;
-          outline: none;
-        }
-        .input:focus { border-color: #3971b8; }
-      `}</style>
+      <style>{`.input { width: 100%; border-radius: 0.75rem; border: 1px solid #e5e8d2; background: #fbfcee; padding: 0.75rem 1rem; outline: none; } .input:focus { border-color: #3971b8; }`}</style>
     </MainLayout>
   );
 }

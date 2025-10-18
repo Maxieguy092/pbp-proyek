@@ -39,8 +39,13 @@ export default function LoginPage() {
       // PENTING: Simpan objek user ke state global melalui context
       setUser(data.user);
 
-      // Arahkan ke halaman dashboard setelah login berhasil
-      navigate("/dashboard/profile");
+      if (data.user.role === "admin") {
+        // Jika admin, arahkan ke dasbor admin
+        navigate("/admin/dashboard");
+      } else {
+        // Jika bukan, arahkan ke profil pengguna biasa
+        navigate("/dashboard/profile");
+      }
     } catch (err) {
       setError(err.message);
     } finally {

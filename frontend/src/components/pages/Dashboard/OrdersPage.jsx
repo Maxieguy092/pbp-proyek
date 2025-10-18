@@ -35,7 +35,7 @@ const StatusBadge = ({ status }) => {
 // ================================================================
 // KOMPONEN BARU: Untuk menampilkan detail alamat yang sudah diparsing
 // ================================================================
-const AddressDetails = ({ addressText }) => {
+const AddressDetails = ({ addressText, email }) => {
   try {
     // Parsing string JSON menjadi objek JavaScript
     const address = JSON.parse(addressText);
@@ -51,6 +51,10 @@ const AddressDetails = ({ addressText }) => {
         </p>
         <p className="mt-2">
           <strong>Phone:</strong> {address.phone}
+        </p>
+        {/* Baris ini sekarang akan berfungsi dengan benar */}
+        <p>
+          <strong>Email:</strong> {email}
         </p>
       </div>
     );
@@ -135,6 +139,11 @@ export default function OrdersPage() {
                       />
                       <div>
                         <p className="font-medium">{item.name}</p>
+                        {item.variant && (
+                          <p className="text-sm text-gray-500">
+                            Size: {item.variant}
+                          </p>
+                        )}
                         <p className="text-sm text-gray-500">
                           {item.qty} x {formatIDR(item.price)}
                         </p>
@@ -150,7 +159,10 @@ export default function OrdersPage() {
                       Shipping Details
                     </h3>
                     {/* Gunakan komponen AddressDetails */}
-                    <AddressDetails addressText={order.addressText} />
+                    <AddressDetails
+                      addressText={order.addressText}
+                      email={order.shippingEmail}
+                    />
                   </div>
                   <hr />
                   <div>

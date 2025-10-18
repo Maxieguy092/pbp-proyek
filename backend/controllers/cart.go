@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"database/sql"
+	"encoding/json"
 	"net/http"
 
 	db "github.com/Maxiegame092/pbp-app/DB"
@@ -16,8 +17,8 @@ type CartItem struct {
 	Price      float64 `json:"price"`
 	ImageURL   string  `json:"imageUrl"`
 	Qty        int     `json:"qty"`
-	Stock      int     `json:"stock"`
 	Variant    *string `json:"variant,omitempty"`
+	VariantStock int     `json:"variantStock"`
 }
 
 // Fungsi helper untuk mengambil ID user dan cart berdasarkan email dari sesi
@@ -55,7 +56,7 @@ func GetCart(c *gin.Context) {
 
 	rows, err := db.DB.Query(`
 		SELECT 
-			ci.id, p.id, p.name, p.price, p.image_url, ci.qty, p.stock, ci.variant
+			ci.id, p.id, p.name, p.price, p.image_url, ci.qty, ci.variant, p.sizes
 		FROM cart_items ci 
 		JOIN products p ON ci.product_id = p.id 
 		WHERE ci.cart_id = ?
@@ -70,9 +71,28 @@ func GetCart(c *gin.Context) {
 
 	for rows.Next() {
 		var item CartItem
-		if err := rows.Scan(&item.CartItemID, &item.ID, &item.Name, &item.Price, &item.ImageURL, &item.Qty, &item.Stock, &item.Variant); err != nil {
+		var sizesJSON sql.NullString // Variabel untuk menampung JSON sizes
+
+		// 2. UBAH SCAN: Sesuaikan dengan query baru
+		if err := rows.Scan(&item.CartItemID, &item.ID, &item.Name, &item.Price, &item.ImageURL, &item.Qty, &item.Variant, &sizesJSON); err != nil {
 			continue
 		}
+
+		// 3. LOGIKA BARU: Cari stok untuk varian spesifik
+		item.VariantStock = 0 // Default stok 0
+		if sizesJSON.Valid && item.Variant != nil {
+			var sizes []SizeOption // Gunakan struct SizeOption dari products.go
+			if json.Unmarshal([]byte(sizesJSON.String), &sizes) == nil {
+				// Loop untuk mencari varian yang cocok
+				for _, s := range sizes {
+					if s.Size == *item.Variant {
+						item.VariantStock = s.Stock // Ditemukan, set stoknya
+						break
+					}
+				}
+			}
+		}
+
 		items = append(items, item)
 	}
 	
@@ -132,17 +152,59 @@ func UpdateCartItem(c *gin.Context) {
 	var req struct {
 		Qty int `json:"qty"`
 	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+	if err := c.ShouldBindJSON(&req); err != nil { /* ... */ }
+    
+    // VALIDASI KUANTITAS MINIMUM
+    if req.Qty <= 0 {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Quantity must be positive"})
+        return
+    }
+
+	// 1. Ambil detail item dari DB untuk mendapatkan product_id dan variant
+	var productID int
+	var variant sql.NullString
+	err := db.DB.QueryRow("SELECT product_id, variant FROM cart_items WHERE id = ?", cartItemID).Scan(&productID, &variant)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Cart item not found"})
 		return
 	}
 
-	_, err := db.DB.Exec("UPDATE cart_items SET qty = ? WHERE id = ?", req.Qty, cartItemID)
+	// 2. Ambil data 'sizes' dari produk terkait
+	var sizesJSON sql.NullString
+	err = db.DB.QueryRow("SELECT sizes FROM products WHERE id = ?", productID).Scan(&sizesJSON)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Product not found"})
+		return
+	}
+
+	// 3. Cari stok spesifik untuk varian tersebut
+	variantStock := 0
+	if sizesJSON.Valid && variant.Valid {
+		var sizes []SizeOption
+		if json.Unmarshal([]byte(sizesJSON.String), &sizes) == nil {
+			for _, s := range sizes {
+				if s.Size == variant.String {
+					variantStock = s.Stock
+					break
+				}
+			}
+		}
+	}
+
+	// 4. LAKUKAN VALIDASI STOK
+	if req.Qty > variantStock {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot add more items than available stock"})
+		return
+	}
+
+	// 5. Jika validasi lolos, baru update kuantitas
+	_, err = db.DB.Exec("UPDATE cart_items SET qty = ? WHERE id = ?", req.Qty, cartItemID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update item quantity"})
 		return
 	}
-	GetCart(c)
+	
+    GetCart(c) // Kirim kembali data keranjang yang sudah diperbarui
 }
 
 // DELETE /api/cart/items/:id - Menghapus item dari keranjang
