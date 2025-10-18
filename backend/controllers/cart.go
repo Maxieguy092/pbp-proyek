@@ -21,31 +21,33 @@ type CartItem struct {
 }
 
 // Fungsi helper untuk mengambil ID user dan cart berdasarkan email dari sesi
-func getCartIDByEmail(email string) (int, int, error) {
-	var userID, cartID int
-	err := db.DB.QueryRow("SELECT id FROM users WHERE email = ?", email).Scan(&userID)
-	if err != nil {
-		return 0, 0, err
-	}
-
-	err = db.DB.QueryRow("SELECT id FROM carts WHERE user_id = ?", userID).Scan(&cartID)
+func getOrCreateCartIDByUserID(userID int) (int, error) {
+	var cartID int
+	// Langsung cari cart berdasarkan userID
+	err := db.DB.QueryRow("SELECT id FROM carts WHERE user_id = ?", userID).Scan(&cartID)
+	
 	if err == sql.ErrNoRows {
+		// Jika cart tidak ada, buat yang baru
 		res, err := db.DB.Exec("INSERT INTO carts (user_id) VALUES (?)", userID)
 		if err != nil {
-			return 0, 0, err
+			return 0, err
 		}
 		newCartID, _ := res.LastInsertId()
 		cartID = int(newCartID)
 	} else if err != nil {
-		return 0, 0, err
+		return 0, err
 	}
-	return userID, cartID, nil
+	return cartID, nil
 }
 
 // GET /api/cart - Mengambil isi keranjang pengguna
 func GetCart(c *gin.Context) {
-	email, _ := c.Get("userEmail")
-	_, cartID, err := getCartIDByEmail(email.(string))
+	// UBAH BAGIAN INI: Ambil 'user_id' dan konversi ke int
+	userIDInterface, _ := c.Get("user_id")
+	userID := userIDInterface.(int)
+
+	// Gunakan fungsi helper yang baru
+	cartID, err := getOrCreateCartIDByUserID(userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not retrieve user cart"})
 		return
@@ -86,8 +88,12 @@ func GetCart(c *gin.Context) {
 
 // POST /api/cart/items - Menambah item ke keranjang
 func AddItemToCart(c *gin.Context) {
-	email, _ := c.Get("userEmail")
-	_, cartID, err := getCartIDByEmail(email.(string))
+	// UBAH BAGIAN INI: Ambil 'user_id' dan konversi ke int
+	userIDInterface, _ := c.Get("user_id")
+	userID := userIDInterface.(int)
+
+	// Gunakan fungsi helper yang baru
+	cartID, err := getOrCreateCartIDByUserID(userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not process user cart"})
 		return
@@ -150,8 +156,12 @@ func DeleteCartItem(c *gin.Context) {
 
 // DELETE /api/cart - Mengosongkan keranjang
 func ClearCart(c *gin.Context) {
-	email, _ := c.Get("userEmail")
-	_, cartID, err := getCartIDByEmail(email.(string))
+	// UBAH BAGIAN INI: Ambil 'user_id' dan konversi ke int
+	userIDInterface, _ := c.Get("user_id")
+	userID := userIDInterface.(int)
+	
+	// Gunakan fungsi helper yang baru
+	cartID, err := getOrCreateCartIDByUserID(userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not process user cart"})
 		return
@@ -163,6 +173,5 @@ func ClearCart(c *gin.Context) {
 		return
 	}
     
-    // UBAH BARIS INI: Dari gin.H{} menjadi array kosong yang sesuai dengan tipe data CartItem
 	c.JSON(http.StatusOK, []CartItem{})
 }

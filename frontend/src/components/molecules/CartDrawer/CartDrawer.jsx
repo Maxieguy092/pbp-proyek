@@ -1,21 +1,34 @@
-// src/components/organisms/CartDrawer/CartDrawer.jsx
+// 📁 src/components/organisms/CartDrawer/CartDrawer.jsx
 import { useNavigate } from "react-router-dom";
 import { useCart, formatIDR } from "../../../contexts/CartContext";
 
 const FALLBACK_IMG = "/images/fallback.png";
 
-export default function CartDrawer({ open, onClose }) {
+// Hapus props 'open' dan 'onClose' dari parameter
+export default function CartDrawer() {
   const nav = useNavigate();
-  const { items, increment, decrement, remove, clear, total } = useCart();
 
-  if (!open) return null;
+  // Ambil 'isCartOpen' dan 'closeCart' langsung dari context
+  const {
+    items,
+    increment,
+    decrement,
+    remove,
+    clear,
+    total,
+    isCartOpen, // <-- Ambil state ini
+    closeCart, // <-- Ambil fungsi ini
+  } = useCart();
+
+  // Gunakan 'isCartOpen' untuk menentukan render, bukan props 'open'
+  if (!isCartOpen) return null;
 
   return (
     <>
       {/* overlay */}
       <button
         aria-label="Close cart overlay"
-        onClick={onClose}
+        onClick={closeCart} // Gunakan 'closeCart' dari context
         className="fixed inset-0 bg-black/10 backdrop-blur-[1px] z-40"
       />
       {/* panel */}
@@ -23,7 +36,7 @@ export default function CartDrawer({ open, onClose }) {
         <div className="flex items-center justify-between px-6 h-16 border-b border-[#d3e0a9]">
           <h2 className="text-2xl font-semibold text-[#2b2b2b]">Cart</h2>
           <button
-            onClick={onClose}
+            onClick={closeCart} // Gunakan 'closeCart' dari context
             className="text-xl px-2 py-1 rounded-lg hover:bg-[#e1eac4] text-[#3971b8]"
             aria-label="Close"
           >
@@ -35,9 +48,6 @@ export default function CartDrawer({ open, onClose }) {
         <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
           {items.map((it) => (
             <div key={it.cartItemId} className="flex gap-4">
-              {" "}
-              {/* Gunakan cartItemId untuk key */}
-              {/* thumbnail */}
               <div className="w-28 h-28 rounded-xl overflow-hidden bg-[#d9d9d9] border border-[#e8e8e8]">
                 <img
                   src={it.imageUrl || FALLBACK_IMG}
@@ -48,7 +58,6 @@ export default function CartDrawer({ open, onClose }) {
                   }}
                 />
               </div>
-              {/* info + controls */}
               <div className="flex-1">
                 <p className="text-[#2b2b2b] leading-snug">
                   {it.name}
@@ -63,7 +72,6 @@ export default function CartDrawer({ open, onClose }) {
                 </p>
 
                 <div className="mt-2 inline-flex items-center border border-[#d3e0a9] rounded-lg overflow-hidden">
-                  {/* --- UBAH DI SINI --- */}
                   <button
                     onClick={() => decrement(it.cartItemId)}
                     disabled={it.qty <= 1}
@@ -81,7 +89,6 @@ export default function CartDrawer({ open, onClose }) {
                     {it.qty}
                   </span>
 
-                  {/* --- UBAH DI SINI --- */}
                   <button
                     onClick={() => {
                       const max = Number.isFinite(it.stock) ? it.stock : 99;
@@ -94,7 +101,6 @@ export default function CartDrawer({ open, onClose }) {
                   </button>
                 </div>
 
-                {/* --- UBAH DI SINI --- */}
                 <button
                   onClick={() => remove(it.cartItemId)}
                   className="ml-5 mt-2 text-xs text-red-600 hover:underline"
@@ -122,7 +128,6 @@ export default function CartDrawer({ open, onClose }) {
             </div>
 
             <div className="flex gap-2">
-              {/* clear semua */}
               <button
                 onClick={clear}
                 disabled={!items.length}
@@ -138,7 +143,7 @@ export default function CartDrawer({ open, onClose }) {
 
               <button
                 onClick={() => {
-                  onClose();
+                  closeCart(); // Tutup drawer sebelum pindah halaman
                   nav("/checkout");
                 }}
                 className="rounded-xl px-6 py-3 font-medium transition bg-[#3971b8] text-[#fbfcee] hover:opacity-95 active:scale-[.99]"

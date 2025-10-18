@@ -22,6 +22,7 @@ export function CartProvider({ children }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const { user } = useUser();
+  const [isCartOpen, setIsCartOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -52,12 +53,35 @@ export function CartProvider({ children }) {
     }
   }, [user]);
 
+  const openCart = () => setIsCartOpen(true);
+  const closeCart = () => setIsCartOpen(false);
+
   const add = async (product, qty = 1, variant = null) => {
-    if (!user)
+    if (!user) {
       return alert("Silakan login untuk menambahkan item ke keranjang.");
+    }
+
+    // LANGKAH 1: Cari tahu apakah produk sudah ada di keranjang.
+    // Kita cek berdasarkan ID produk dan varian (size).
+    const existingItem = items.find(
+      (item) => item.id === product.id && item.variant === variant
+    );
+    const qtyInCart = existingItem ? existingItem.qty : 0;
+
+    // LANGKAH 2: Cek apakah total kuantitas akan melebihi stok.
+    // product.stock didapat dari object product yang dikirim dari ProductDetailPage
+    if (qtyInCart + qty > product.stock) {
+      return alert(
+        `Tidak bisa menambahkan melebihi stok. Anda sudah punya ${qtyInCart} di keranjang, dan stok produk ini hanya ${product.stock}.`
+      );
+    }
+
+    // LANGKAH 3: Jika aman, baru kirim request ke backend.
     try {
       const updatedCart = await addItemToCart(product.id, qty, variant);
       setItems(updatedCart);
+      // Beri notifikasi sukses jika perlu
+      // alert(`${qty} ${product.name} ditambahkan ke keranjang.`);
     } catch (error) {
       alert(error.message);
     }
@@ -119,6 +143,9 @@ export function CartProvider({ children }) {
     clear,
     total,
     count,
+    isCartOpen,
+    openCart,
+    closeCart,
   };
 
   return <CartCtx.Provider value={value}>{children}</CartCtx.Provider>;

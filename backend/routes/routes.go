@@ -36,7 +36,22 @@ func SetupRoutes(r *gin.Engine) {
 			auth.POST("/cart/items", controllers.AddItemToCart)
 			auth.PUT("/cart/items/:id", controllers.UpdateCartItem)
 			auth.DELETE("/cart/items/:id", controllers.DeleteCartItem)
-			auth.DELETE("/cart", controllers.ClearCart)
+			auth.DELETE("/cart", controllers.ClearCart)	
+			auth.POST("/orders", controllers.CreateOrder)
+			auth.GET("/check-auth", func(c *gin.Context) {
+				userID, exists := c.Get("user_id")
+				if !exists {
+					c.JSON(http.StatusUnauthorized, gin.H{
+						"status": "gagal",
+						"pesan":  "Middleware tidak menemukan user_id di dalam konteks.",
+					})
+					return
+				}
+				c.JSON(http.StatusOK, gin.H{
+					"status":  "sukses",
+					"user_id": userID,
+				})
+			})
 		}
 
 		// Rute untuk health check

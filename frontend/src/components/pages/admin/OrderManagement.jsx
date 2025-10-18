@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import AdminLayout from "../../templates/AdminLayout/AdminLayout";
 import { formatIDR } from "../../../contexts/CartContext";
-import { fetchOrders, updateOrderStatus } from "../../../api/orders"; // Impor fungsi API
+import { fetchOrders, updateOrderStatus } from "../../../api/orders";
 
 const STATUS_OPTIONS = [
   "Pending",
@@ -19,7 +19,6 @@ export default function OrderManagement() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Ambil data dari backend saat komponen dimuat
   useEffect(() => {
     setLoading(true);
     fetchOrders()
@@ -28,18 +27,13 @@ export default function OrderManagement() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Fungsi untuk mengubah status
   const changeStatus = (id, newStatus) => {
-    // Optimistic update: langsung ubah di UI
     setOrders((prev) =>
       prev.map((o) => (o.id === id ? { ...o, status: newStatus } : o))
     );
-
-    // Kirim perubahan ke backend
     updateOrderStatus(id, newStatus).catch((err) => {
       console.error("Gagal update:", err);
       alert("Gagal memperbarui status. Coba lagi.");
-      // Jika perlu, kembalikan data ke state semula
     });
   };
 
@@ -88,7 +82,10 @@ export default function OrderManagement() {
             <tbody>
               {orders.map((o) => (
                 <tr key={o.id} className="border-b border-[#d3e0a9]">
-                  <td className="py-3 px-4 font-medium">{o.id}</td>
+                  <td className="py-3 px-4 font-medium">
+                    {/* ID SUDAH DIFORMAT */}
+                    ORD-{String(o.id).padStart(3, "0")}
+                  </td>
                   <td className="py-3 px-4">{o.customer}</td>
                   <td className="py-3 px-4">{o.date}</td>
                   <td className="py-3 px-4">{o.address}</td>
