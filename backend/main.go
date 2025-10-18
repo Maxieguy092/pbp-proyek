@@ -13,7 +13,13 @@ func main() {
     db.InitDB() // cukup panggil aja, jangan ditampung ke err
 
     r := gin.Default()
+    
 
+    // Serve dua path, /images dan /api/images
+    r.Static("/images", "./images")
+    r.Static("/api/images", "./images")
+    
+    
     r.Use(cors.New(cors.Config{
         AllowOrigins:     []string{"http://localhost:5173", "http://localhost:3000"},
         AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},

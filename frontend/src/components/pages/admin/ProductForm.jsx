@@ -8,68 +8,62 @@ import { formatIDR } from "../../../contexts/CartContext";
 import { useProducts } from "../../../contexts/ProductContext";
 import { useMemo, useState, useEffect } from "react";
 
-
-
 export default function ProductForm() {
   const nav = useNavigate();
-  const { id } = useParams(); // undefined kalau /new
+  const { id } = useParams();
   const isEdit = Boolean(id);
   const { products, addProduct, updateProduct, deleteProduct } = useProducts();
 
+  const productId = Number(id);
   const existing = useMemo(
-    () => products.find((p) => p.id === id) || {},
-    [id, products]
+    () => products.find((p) => p.id === productId) || {},
+    [productId, products]
   );
 
-
+  // 🧩 form dengan stock per size
   const [form, setForm] = useState({
     name: existing.name || "",
     category: existing.category || "",
     price: existing.price || 0,
-    stock: existing.stock || 0,
+    sizes: existing.sizes || [
+      { size: "S", stock: 0 },
+      { size: "M", stock: 0 },
+      { size: "L", stock: 0 },
+      { size: "XL", stock: 0 },
+    ],
     description: existing.description || "",
     images: existing.images || [],
   });
+
   const [showConfirm, setShowConfirm] = useState(false);
   const [errors, setErrors] = useState({});
 
+  // 🧠 input handler umum
   const set = (k) => (e) => {
-  let value = e.target.value;
-
-  // validasi khusus untuk price & stock
-  if (k === "price" || k === "stock") {
-    // hapus karakter non-digit
-    value = value.replace(/[^0-9]/g, "");
-
-    // kalau kosong (user hapus semua angka), biarkan kosong string
-    if (value === "") {
-      setForm((f) => ({ ...f, [k]: "" }));
-      setErrors((err) => ({ ...err, [k]: "" }));
-      return;
+    let value = e.target.value;
+    if (k === "price") {
+      value = value.replace(/[^0-9]/g, "");
+      if (value === "") {
+        setForm((f) => ({ ...f, [k]: "" }));
+        setErrors((err) => ({ ...err, [k]: "" }));
+        return;
+      }
+      value = Math.max(0, Number(value));
     }
-
-    // ubah ke number & pastikan minimal 0
-    value = Math.max(0, Number(value));
-  }
-
-  setForm((f) => ({ ...f, [k]: value }));
-  setErrors((err) => ({ ...err, [k]: "" })); // hapus error saat user isi
-};
-
-
-  
-  // --- handle file upload ---
-  const handleImageUpload = (e) => {
-  const files = Array.from(e.target.files);
-  const previews = files.map((file) => ({
-    file,
-    url: URL.createObjectURL(file),
-  }));
-
-  setForm((f) => ({ ...f, images: [...f.images, ...previews].slice(0, 4) }));
-  setErrors((err) => ({ ...err, images: "" })); // error ilang pas user upload
+    setForm((f) => ({ ...f, [k]: value }));
+    setErrors((err) => ({ ...err, [k]: "" }));
   };
 
+  // 📸 upload gambar
+  const handleImageUpload = (e) => {
+    const files = Array.from(e.target.files);
+    const previews = files.map((file) => ({
+      file,
+      url: URL.createObjectURL(file),
+    }));
+    setForm((f) => ({ ...f, images: [...f.images, ...previews].slice(0, 4) }));
+    setErrors((err) => ({ ...err, images: "" }));
+  };
 
   const removeImage = (index) => {
     setForm((f) => ({
@@ -78,78 +72,92 @@ export default function ProductForm() {
     }));
   };
 
-
-  // --- validation ---
-  const validate = () => {
-  const newErrors = {};
-
-  if (!form.name.trim()) 
-    newErrors.name = "Product name is required.";
-  
-  if (!form.category.trim()) 
-    newErrors.category = "Category must be selected.";
-
-  if (!form.price || form.price <= 0)
-    newErrors.price = "Price must be greater than 0.";
-
-  if (!form.stock || form.stock <= 0)
-  newErrors.stock = "Stock must be greater than 0.";
-
-
-  if (!form.description.trim())
-    newErrors.description = "Please add a product description.";
-
-  if (form.images.length === 0)
-    newErrors.images = "At least one image is required.";
-
-  setErrors(newErrors);
-  return Object.keys(newErrors).length === 0;
+  // 🧩 ubah stok per size
+  const setSizeStock = (index, value) => {
+    const updated = [...form.sizes];
+    // biarkan kosong dulu, baru validasi nanti
+    updated[index].stock = value === "" ? "" : Math.max(0, Number(value));
+    setForm((f) => ({ ...f, sizes: updated }));
   };
 
 
+  // validasi
+  const validate = () => {
+    const newErrors = {};
+    if (!form.name.trim()) newErrors.name = "Product name is required.";
+    if (!form.category.trim()) newErrors.category = "Category must be selected.";
+    if (!form.price || form.price <= 0)
+      newErrors.price = "Price must be greater than 0.";
+    if (!form.description.trim())
+      newErrors.description = "Please add a product description.";
+    if (form.images.length === 0)
+      newErrors.images = "At least one image is required.";
 
-  const save = (e) => {
+    // pastikan minimal satu size punya stok > 0
+    const totalStock = form.sizes.reduce((sum, s) => sum + s.stock, 0);
+    if (totalStock <= 0)
+      newErrors.sizes = "At least one size must have stock greater than 0.";
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // simpan data
+  const save = async (e) => {
     e.preventDefault();
-    if (!validate()) return; // stop kalau invalid
-    
-    if (isEdit) {
-      updateProduct(id, form);
-    } else {
-      addProduct(form);
-    }
+    if (!validate()) return;
+
+    const finalForm = {
+      ...form,
+      stock: form.sizes.reduce((sum, s) => sum + s.stock, 0),
+      category_id: Number(form.category),
+    };
+
+      
+    if (isEdit) await updateProduct(id, finalForm);
+    else await addProduct(finalForm);
+
     nav("/admin/products");
   };
 
-
+  // 🗑️ hapus produk
   const del = () => {
     setShowConfirm(false);
     deleteProduct(id);
     nav("/admin/products");
   };
 
-  // optional: cleanup object URLs biar ga leak
+  // 🧹 load data kalau mode edit
   useEffect(() => {
-  if (isEdit && existing.images) {
-    // pastikan formatnya sesuai (kalau dari backend string URL)
-    const existingPreviews = existing.images.map((img) =>
-      typeof img === "string" ? { url: img } : img
-    );
-    setForm((f) => ({ ...f, images: existingPreviews }));
-  }
-}, [isEdit, existing]);
-
-
-
-
-
-
-
+    if (isEdit && existing.id) {
+      setForm({
+        name: existing.name || "",
+        category: existing.category_id?.toString() || "",
+        price: existing.price || 0,
+        sizes: existing.sizes || [
+          { size: "S", stock: 0 },
+          { size: "M", stock: 0 },
+          { size: "L", stock: 0 },
+          { size: "XL", stock: 0 },
+        ],
+        description: existing.description || "",
+        images: (existing.images || []).map((img) => {
+          if (typeof img === "string") {
+            const fullUrl = img.startsWith("http")
+              ? img
+              : `http://localhost:5000${img}`;
+            return { url: fullUrl };
+          }
+          return img;
+        }),
+      });
+    }
+  }, [isEdit, existing, products]);
 
   return (
     <AdminLayout>
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8">
         <form onSubmit={save} className="space-y-8">
-
 
           {/* Product Name */}
           <section>
@@ -169,8 +177,8 @@ export default function ProductForm() {
             )}
           </section>
 
-          {/* Category, Price, Stock */}
-          <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Category & Price */}
+          <section className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <h3 className="text-xl font-semibold mb-2">Category</h3>
               <select
@@ -183,10 +191,10 @@ export default function ProductForm() {
                 } focus:border-[#3971b8]`}
               >
                 <option value="">— Choose —</option>
-                <option>Shirts</option>
-                <option>T-Shirts</option>
-                <option>Pants</option>
-                <option>Outerwear</option>
+                <option value="1">T-Shirts</option>
+                <option value="2">Shirts</option>
+                <option value="3">Pants</option>
+                <option value="4">Outerwear</option>
               </select>
               {errors.category && (
                 <p className="text-sm text-red-600 mt-1">{errors.category}</p>
@@ -199,38 +207,51 @@ export default function ProductForm() {
                 type="number"
                 value={form.price}
                 onChange={set("price")}
-                onWheel={(e) => e.target.blur()} // biar nggak bisa scroll ubah angka
+                onWheel={(e) => e.target.blur()}
                 className={`w-full rounded-xl border px-4 py-3 outline-none ${
                   errors.price
                     ? "border-red-500 bg-red-50"
                     : "border-[#e5e8d2] bg-[#fbfcee]"
                 } focus:border-[#3971b8]`}
                 placeholder={formatIDR(0)}
-   
               />
               {errors.price && (
                 <p className="text-sm text-red-600 mt-1">{errors.price}</p>
               )}
             </div>
+          </section>
 
-            <div>
-              <h3 className="text-xl font-semibold mb-2">Stock</h3>
-              <input
-                type="number"
-                min="0"
-                value={form.stock}
-                onChange={set("stock")}
-                onWheel={(e) => e.target.blur()}
-                className={`w-full rounded-xl border px-4 py-3 outline-none ${
-                  errors.stock
-                    ? "border-red-500 bg-red-50"
-                    : "border-[#e5e8d2] bg-[#fbfcee]"
-                } focus:border-[#3971b8]`}
-                placeholder="0"
-              />
-
-              {errors.stock && (
-                <p className="text-sm text-red-600 mt-1">{errors.stock}</p>
+          {/* 🧩 Stock by Size */}
+          <section>
+            <h3 className="text-xl font-semibold mb-2">Stock by Size</h3>
+            <div
+              className={`rounded-xl border p-4 ${
+                errors.sizes
+                  ? "border-red-500 bg-red-50"
+                  : "border-[#e5e8d2] bg-[#fbfcee]"
+              }`}
+            >
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {form.sizes.map((s, i) => (
+                  <div key={i}>
+                    <label className="block text-sm font-medium mb-1">
+                      {s.size}
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={s.stock}
+                      onChange={(e) => setSizeStock(i, e.target.value)}
+                      onBlur={() => {
+                        if (s.stock === "") setSizeStock(i, 0); // kalau dikosongin terus pindah fokus → jadi 0
+                      }}
+                      className="w-full rounded-xl border px-3 py-2 outline-none border-[#e5e8d2] focus:border-[#3971b8]"
+                    />
+                  </div>
+                ))}
+              </div>
+              {errors.sizes && (
+                <p className="text-sm text-red-600 mt-2">{errors.sizes}</p>
               )}
             </div>
           </section>
@@ -249,7 +270,7 @@ export default function ProductForm() {
               } focus:border-[#3971b8]`}
               placeholder="…"
             />
-             {errors.description && (
+            {errors.description && (
               <p className="text-sm text-red-600 mt-1">{errors.description}</p>
             )}
           </section>
@@ -257,12 +278,13 @@ export default function ProductForm() {
           {/* Upload Image */}
           <section>
             <h3 className="text-xl font-semibold mb-2">Upload Image</h3>
-            <div 
+            <div
               className={`rounded-xl border p-4 ${
-                  errors.images ? "border-red-500 bg-red-50" : "border-[#e5e8d2] bg-[#fbfcee]"
-                }`}
+                errors.images
+                  ? "border-red-500 bg-red-50"
+                  : "border-[#e5e8d2] bg-[#fbfcee]"
+              }`}
             >
-              
               <input
                 type="file"
                 multiple
@@ -283,9 +305,15 @@ export default function ProductForm() {
                   {form.images.map((img, i) => (
                     <div key={i} className="relative w-28 h-20">
                       <img
-                        src={img.url || img}
+                        src={
+                          img.url
+                            ? img.url
+                            : img.startsWith("http")
+                            ? img
+                            : `http://localhost:5000${img}`
+                        }
                         alt={`preview-${i}`}
-                        className="w-full h-full object-cover rounded-xl border border-[#d9d9d9]"
+                        className="w-full h-full object-cover rounded"
                       />
                       <button
                         type="button"
@@ -305,7 +333,7 @@ export default function ProductForm() {
           </section>
 
           {/* Actions */}
-          <div className="flex flex-wrap gap-3 justify-center sm:justify-start">
+          <div className="flex flex-wrap gap-3 justify-center sm:justify-start mt-4">
             <button
               type="button"
               onClick={() => window.history.back()}
@@ -332,7 +360,6 @@ export default function ProductForm() {
         </form>
       </div>
 
-      {/* modal confirm delete */}
       <ConfirmModal
         open={showConfirm}
         message="Do you really want to delete this product? This process cannot be undone."

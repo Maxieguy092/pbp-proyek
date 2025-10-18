@@ -18,3 +18,16 @@ export async function registerUser(userData) {
 
   return data;
 }
+
+export async function checkAdminSession() {
+  const res = await fetch("/api/admin/dashboard", {
+    method: "GET",
+    credentials: "include",
+  });
+
+  if (!res.ok) {
+    throw new Error("Not authenticated or not admin");
+  }
+
+  return res.json();
+}

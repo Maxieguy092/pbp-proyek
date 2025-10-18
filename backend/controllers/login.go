@@ -37,7 +37,9 @@ func generateSessionID() string {
 }
 
 // ================================================================
-// 						FUNGSI REGISTER BARU
+//
+//	FUNGSI REGISTER BARU
+//
 // ================================================================
 func Register(c *gin.Context) {
 	var req RegisterRequest
@@ -75,7 +77,9 @@ func Register(c *gin.Context) {
 }
 
 // ================================================================
-// 				FUNGSI LOGIN DENGAN PERBAIKAN KEAMANAN
+//
+//	FUNGSI LOGIN DENGAN PERBAIKAN KEAMANAN
+//
 // ================================================================
 func Login(c *gin.Context) {
 	var req LoginRequest
@@ -151,4 +155,36 @@ func CheckSession(c *gin.Context) {
 		"lastName":  lastName,
 		"email":     email,
 	})
+}
+
+func RequireAdmin() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		cookie, err := c.Cookie("session_token")
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "no session cookie"})
+			return
+		}
+
+		email, exists := sessions[cookie]
+		if !exists {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired session"})
+			return
+		}
+
+		var role string
+		err = db.DB.QueryRow("SELECT role FROM users WHERE email = ?", email).Scan(&role)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch user role"})
+			return
+		}
+
+		if role != "admin" {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "forbidden: admin only"})
+			return
+		}
+
+		// store email in context for next handlers if needed
+		c.Set("email", email)
+		c.Next()
+	}
 }

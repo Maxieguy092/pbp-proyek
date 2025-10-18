@@ -1,8 +1,8 @@
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import MainLayout from "../templates/MainLayout/MainLayout";
 import ProductCard from "../molecules/ProductCard/ProductCard";
-import { allProducts } from "../../data/catalog"; // <- ambil data dari catalog.js
+import { fetchProducts } from "../../api/products";
 
 // normalizer simpel buat pencarian case-insensitive
 const norm = (s) => (s || "").toString().toLowerCase().trim();
@@ -11,19 +11,56 @@ export default function SearchPage() {
   const [params] = useSearchParams();
   const q = params.get("q") || "";
 
+  const [allProducts, setAllProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Ambil semua produk dari backend saat halaman dimuat
+  useEffect(() => {
+    const getProducts = async () => {
+      try {
+        const data = await fetchProducts(); // panggil API backend
+        setAllProducts(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    getProducts();
+  }, []);
+
+  // Filter produk sesuai query pencarian
   const filtered = useMemo(() => {
     if (!q) return [];
     const term = norm(q);
-
-    // filter by name, category, (opsional) description
     return allProducts.filter((p) => {
       const inName = norm(p.name).includes(term);
       const inCat = norm(p.category).includes(term);
-      return inName || inCat;
+      const inDesc = norm(p.description || "").includes(term);
+      return inName || inCat || inDesc;
     });
-  }, [q]);
+  }, [q, allProducts]);
 
   const resultsCount = filtered.length;
+
+  if (loading) {
+    return (
+      <MainLayout>
+        <p className="text-center py-10">Loading products...</p>
+      </MainLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <MainLayout>
+        <p className="text-center text-red-600 py-10">
+          Error loading products: {error}
+        </p>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>

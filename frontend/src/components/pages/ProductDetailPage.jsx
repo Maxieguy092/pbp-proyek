@@ -41,9 +41,14 @@ export default function ProductDetailPage() {
       .then((p) => {
         if (!alive) return;
         setProduct(p);
-        // default size kalo ada
-        setSize(p?.sizes?.[0] ?? null);
-      })
+
+        // ✅ Pilih otomatis size pertama yang stoknya masih tersedia
+        const availableSize = Array.isArray(p?.sizes)
+          ? p.sizes.find((s) => s.stock > 0)?.size || null
+          : null;
+
+          setSize(availableSize);
+        })
       .catch(() => {
         if (!alive) return;
         setProduct(null);
@@ -82,8 +87,14 @@ export default function ProductDetailPage() {
   }
 
   // stok & kondisi
-  const maxQty = Number.isFinite(product?.stock) ? product.stock : 10;
+  // stok & kondisi
+  const selectedSizeStock = Array.isArray(product.sizes)
+    ? product.sizes.find((s) => s.size === size)?.stock ?? 0
+    : product.stock;
+
+  const maxQty = Number.isFinite(selectedSizeStock) ? selectedSizeStock : 10;
   const outOfStock = maxQty <= 0;
+
 
   // galeri gambar: pakai images[] kalo ada, fallback ke imageUrl
   const gallery = product.images?.length
@@ -151,33 +162,46 @@ export default function ProductDetailPage() {
             </p>
 
             {/* Size (opsional) */}
-            {product.sizes?.length ? (
-              <div className="mt-6">
-                <p className="text-sm text-[#2b2b2b] mb-2">Size</p>
-                <div className="flex gap-2 flex-wrap">
-                  {product.sizes.map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => setSize(s)}
-                      className={`px-3 py-2 rounded-lg border ${
-                        size === s
-                          ? "bg-[#e1eac4] border-[#c8d69b]"
-                          : "border-[#d3e0a9]"
-                      }`}
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
+            {Array.isArray(product.sizes) && product.sizes.length > 0 && (
+            <div className="mt-6">
+              <p className="text-sm text-[#2b2b2b] mb-2">Size</p>
+              <div className="flex gap-2 flex-wrap">
+                {product.sizes.map((sObj) => (
+                  <button
+                    key={sObj.size}
+                    onClick={() => {
+                      setSize(sObj.size);
+                      setQty(1); // reset qty ke 1 setiap kali ganti ukuran
+                    }}
+                    className={`px-3 py-2 rounded-lg border ${
+                      size === sObj.size
+                        ? "bg-[#e1eac4] border-[#c8d69b]"
+                        : "border-[#d3e0a9]"
+                    }`}
+                  >
+                    {sObj.size}
+                  </button>
+                ))}
               </div>
-            ) : null}
+            </div>
+          )}
 
-            {/* Stok */}
-            {Number.isFinite(product.stock) && (
-              <p className="mt-6 italic font-semibold text-sm text-gray-600">
-                {outOfStock ? "Stok habis" : `Stok: ${product.stock}`}
-              </p>
-            )}
+
+            {/* Stok berdasarkan size */}
+          {Array.isArray(product.sizes) && product.sizes.length > 0 ? (
+            <p className="mt-6 italic font-semibold text-sm text-gray-600">
+              {size
+                ? `Stok: ${
+                    product.sizes.find((s) => s.size === size)?.stock ?? 0
+                  }`
+                : "Pilih ukuran terlebih dahulu."}
+            </p>
+          ) : (
+            <p className="mt-6 italic font-semibold text-sm text-gray-600">
+              {outOfStock ? "Stok habis" : `Stok: ${product.stock}`}
+            </p>
+          )}
+
 
             {/* Qty */}
             <div className="mt-2 inline-flex items-center border border-[#d3e0a9] rounded-lg overflow-hidden">
@@ -209,7 +233,9 @@ export default function ProductDetailPage() {
             </div>
             {!outOfStock && (
               <p className="text-xs text-gray-500 mt-2">
-                Maksimal {maxQty} per pesanan.
+                {size
+                  ? `Maksimal ${maxQty} per pesanan (size ${size}).`
+                  : `Maksimal ${maxQty} per pesanan.`}
               </p>
             )}
 

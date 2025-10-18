@@ -6,25 +6,9 @@ import AdminLayout from "../../templates/AdminLayout/AdminLayout";
 import { formatIDR } from "../../../contexts/CartContext";
 import { useProducts } from "../../../contexts/ProductContext";
 
-// const MOCK = [
-//   {
-//     id: "p-001",
-//     name: "Baju Baju baju baju – warna",
-//     category: "Outerwear",
-//     price: 999999,
-//     stock: 45,
-//   },
-//   {
-//     id: "p-002",
-//     name: "Baju Baju baju baju – warna",
-//     category: "Outerwear",
-//     price: 999999,
-//     stock: 45,
-//   },
-// ];
-
 export default function ProductManagementList() {
-  const { products } = useProducts();
+  const { products, deleteProduct } = useProducts();
+
   return (
     <AdminLayout>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">

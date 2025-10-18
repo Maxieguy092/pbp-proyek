@@ -41,3 +41,9 @@ INSERT INTO products (id, name, price, stock, category_id, is_active, created_at
 (18, 'Hoodie Heavy Cream', 329000.00, 15, 4, 1, '2025-10-11 05:22:57', '/images/outer-2.jpg', '["/images/outer-2.jpg", "/images/outer-2b.jpg", "/images/outer-2c.jpg", "/images/outer-2d.jpg"]', '["S", "M", "L", "XL"]', 'Hoodie heavyweight, lembut dalamnya, jatuh bagus dan hangat.'),
 (19, 'Windbreaker Navy', 369000.00, 11, 4, 1, '2025-10-11 05:22:57', '/images/outer-3.jpg', '["/images/outer-3.jpg", "/images/outer-3b.jpg", "/images/outer-3c.jpg", "/images/outer-3d.jpg"]', '["S", "M", "L", "XL"]', 'Windbreaker navy ringan, cocok buat commuting dan lari sore.'),
 (20, 'Denim Jacket Mid', 449000.00, 6, 4, 1, '2025-10-11 05:22:57', '/images/outer-4.jpg', '["/images/outer-4.jpg", "/images/outer-4b.jpg", "/images/outer-4c.jpg", "/images/outer-4d.jpg"]', '["S", "M", "L", "XL"]', 'Jaket denim mid-wash, build sturdy, cocok layered dengan tee/hoodie.');
+
+
+-- Samain semua tipe di sizes
+UPDATE products
+SET sizes = '[{"size":"S","stock":4},{"size":"M","stock":4},{"size":"L","stock":4},{"size":"XL","stock":4}]'
+WHERE id BETWEEN 1 AND 20;
