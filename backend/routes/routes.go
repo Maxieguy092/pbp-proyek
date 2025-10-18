@@ -16,17 +16,23 @@ func SetupRoutes(r *gin.Engine) {
 		api.POST("/logout", controllers.Logout)
 		api.GET("/me", controllers.CheckSession)
 
-		// Rute untuk produk
-		api.GET("/products", controllers.GetProducts)
-		api.GET("/products/:id", controllers.GetProductByID)
-		api.POST("/products", controllers.CreateProduct)
-		api.PUT("/products/:id", controllers.UpdateProduct) 
-		api.DELETE("/products/:id", controllers.DeleteProduct)
-
-
 		// Rute untuk health check
 		api.GET("/healthz", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"ok": true})
+		})
+	}
+
+	// ✅ Admin-only group
+	admin := api.Group("/admin")
+	admin.Use(controllers.RequireAdmin())
+	{
+		admin.POST("/products", controllers.CreateProduct)
+		admin.PUT("/products/:id", controllers.UpdateProduct)
+		admin.DELETE("/products/:id", controllers.DeleteProduct)
+
+		// You can add more admin endpoints here
+		admin.GET("/dashboard", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{"message": "Welcome Admin"})
 		})
 	}
 }
