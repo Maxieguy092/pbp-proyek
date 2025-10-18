@@ -8,12 +8,35 @@ import { formatIDR } from "../../../contexts/CartContext";
 import { fetchOrderById, updateOrderStatus } from "../../../api/orders";
 
 export default function OrderDetail() {
+  const [authorized, setAuthorized] = useState(false);
+  const [checked, setChecked] = useState(false);
   const { id: orderId } = useParams();
   const navigate = useNavigate();
 
   const [order, setOrder] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function verifyAdmin() {
+      try {
+        const res = await fetch("/api/admin/check-session", {
+          credentials: "include",
+        });
+        if (!res.ok) throw new Error("Not authorized");
+
+        const data = await res.json();
+        if (data.role !== "admin") navigate("/");
+
+        setAuthorized(true);
+      } catch {
+        navigate("/");
+      } finally {
+        setChecked(true);
+      }
+    }
+    verifyAdmin();
+  }, [navigate]);
 
   const STATUS_OPTIONS = [
     "Pending",

@@ -47,3 +47,9 @@ INSERT INTO products (id, name, price, stock, category_id, is_active, created_at
 UPDATE products
 SET sizes = '[{"size":"S","stock":4},{"size":"M","stock":4},{"size":"L","stock":4},{"size":"XL","stock":4}]'
 WHERE id BETWEEN 1 AND 20;
+
+UPDATE products
+SET 
+  image_url = CONCAT('http://localhost:5000', image_url),
+  images = REPLACE(images, '"/images/', '"http://localhost:5000/images/')
+WHERE id BETWEEN 1 AND 20;

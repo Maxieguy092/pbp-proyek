@@ -2,7 +2,7 @@
 // 📁 src/components/pages/admin/OrderManagement.jsx
 // ==================================================
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import AdminLayout from "../../templates/AdminLayout/AdminLayout";
 import { formatIDR } from "../../../contexts/CartContext";
 import { fetchOrders, updateOrderStatus } from "../../../api/orders";
@@ -16,8 +16,34 @@ const STATUS_OPTIONS = [
 ];
 
 export default function OrderManagement() {
+  const [authorized, setAuthorized] = useState(false);
+  const [checked, setChecked] = useState(false);
+  const navigate = useNavigate();
+
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function verifyAdmin() {
+      try {
+        const res = await fetch("/api/admin/check-session", {
+          credentials: "include",
+        });
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        if (data.role !== "admin"){
+          navigate("/");
+          return;
+        };
+        setAuthorized(true);
+      } catch {
+        navigate("/"); // redirect if not admin
+      } finally {
+        setChecked(true);
+      }
+    }
+    verifyAdmin();
+  }, [navigate]);
 
   useEffect(() => {
     setLoading(true);

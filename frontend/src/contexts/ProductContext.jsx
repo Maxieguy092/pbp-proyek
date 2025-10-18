@@ -7,7 +7,6 @@ export function ProductProvider({ children }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // 🔹 Ambil data produk dari backend
   useEffect(() => {
     async function fetchProducts() {
       try {

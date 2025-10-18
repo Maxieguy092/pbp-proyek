@@ -1,12 +1,41 @@
 // ==================================================
 // 📁 src/components/pages/admin/ProductManagementList.jsx
 // ==================================================
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import AdminLayout from "../../templates/AdminLayout/AdminLayout";
 import { formatIDR } from "../../../contexts/CartContext";
 import { useProducts } from "../../../contexts/ProductContext";
 
 export default function ProductManagementList() {
+  const [authorized, setAuthorized] = useState(false);
+  const [checked, setChecked] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    async function verifyAdmin() {
+      try {
+        const res = await fetch("/api/admin/check-session", {
+          credentials: "include",
+        });
+        if (!res.ok) throw new Error("Not authorized");
+
+        const data = await res.json();
+        if (data.role !== "admin"){
+          navigate("/");
+          return;
+        };
+
+        setAuthorized(true);
+      } catch {
+        navigate("/");
+      } finally {
+        setChecked(true);
+      }
+    }
+    verifyAdmin();
+  }, [navigate]);
+  
   const { products, deleteProduct } = useProducts();
 
   return (

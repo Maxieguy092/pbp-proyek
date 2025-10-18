@@ -20,25 +20,24 @@ export default function ProductForm() {
     [productId, products]
   );
 
-  // 🧩 form dengan stock per size
   const [form, setForm] = useState({
-    name: existing.name || "",
-    category: existing.category || "",
-    price: existing.price || 0,
-    sizes: existing.sizes || [
+    name: "",
+    category: "",
+    price: 0,
+    sizes: [
       { size: "S", stock: 0 },
       { size: "M", stock: 0 },
       { size: "L", stock: 0 },
       { size: "XL", stock: 0 },
     ],
-    description: existing.description || "",
-    images: existing.images || [],
+    description: "",
+    images: [],
   });
 
   const [showConfirm, setShowConfirm] = useState(false);
   const [errors, setErrors] = useState({});
 
-  // 🧠 input handler umum
+  // 🧠 general input handler
   const set = (k) => (e) => {
     let value = e.target.value;
     if (k === "price") {
@@ -54,14 +53,24 @@ export default function ProductForm() {
     setErrors((err) => ({ ...err, [k]: "" }));
   };
 
-  // 📸 upload gambar
+  // 🧩 stock per size
+  const setSizeStock = (index, value) => {
+    const updated = [...form.sizes];
+    updated[index].stock = value === "" ? "" : Math.max(0, Number(value));
+    setForm((f) => ({ ...f, sizes: updated }));
+  };
+
+  // 📸 image upload
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
     const previews = files.map((file) => ({
       file,
       url: URL.createObjectURL(file),
     }));
-    setForm((f) => ({ ...f, images: [...f.images, ...previews].slice(0, 4) }));
+    setForm((f) => ({
+      ...f,
+      images: [...f.images, ...previews].slice(0, 4),
+    }));
     setErrors((err) => ({ ...err, images: "" }));
   };
 
@@ -72,16 +81,7 @@ export default function ProductForm() {
     }));
   };
 
-  // 🧩 ubah stok per size
-  const setSizeStock = (index, value) => {
-    const updated = [...form.sizes];
-    // biarkan kosong dulu, baru validasi nanti
-    updated[index].stock = value === "" ? "" : Math.max(0, Number(value));
-    setForm((f) => ({ ...f, sizes: updated }));
-  };
-
-
-  // validasi
+  // 🔹 validation
   const validate = () => {
     const newErrors = {};
     if (!form.name.trim()) newErrors.name = "Product name is required.";
@@ -93,8 +93,7 @@ export default function ProductForm() {
     if (form.images.length === 0)
       newErrors.images = "At least one image is required.";
 
-    // pastikan minimal satu size punya stok > 0
-    const totalStock = form.sizes.reduce((sum, s) => sum + s.stock, 0);
+    const totalStock = form.sizes.reduce((sum, s) => sum + Number(s.stock), 0);
     if (totalStock <= 0)
       newErrors.sizes = "At least one size must have stock greater than 0.";
 
@@ -102,39 +101,41 @@ export default function ProductForm() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // simpan data
+  // 🔹 save product
   const save = async (e) => {
     e.preventDefault();
     if (!validate()) return;
 
     const finalForm = {
       ...form,
-      stock: form.sizes.reduce((sum, s) => sum + s.stock, 0),
+      stock: form.sizes.reduce((sum, s) => sum + Number(s.stock), 0),
       category_id: Number(form.category),
     };
 
-      
     if (isEdit) await updateProduct(id, finalForm);
     else await addProduct(finalForm);
 
     nav("/admin/products");
   };
 
-  // 🗑️ hapus produk
+  // 🗑️ delete product
   const del = () => {
     setShowConfirm(false);
     deleteProduct(id);
     nav("/admin/products");
   };
 
-  // 🧹 load data kalau mode edit
+  // 🧹 load existing data
   useEffect(() => {
     if (isEdit && existing.id) {
       setForm({
         name: existing.name || "",
         category: existing.category_id?.toString() || "",
         price: existing.price || 0,
-        sizes: existing.sizes || [
+        sizes: existing.sizes?.map((s) => ({
+          size: s.size,
+          stock: Number(s.stock),
+        })) || [
           { size: "S", stock: 0 },
           { size: "M", stock: 0 },
           { size: "L", stock: 0 },
@@ -143,16 +144,15 @@ export default function ProductForm() {
         description: existing.description || "",
         images: (existing.images || []).map((img) => {
           if (typeof img === "string") {
-            const fullUrl = img.startsWith("http")
-              ? img
-              : `http://localhost:5000${img}`;
-            return { url: fullUrl };
+            return { url: img.startsWith("http") ? img : `http://localhost:5000${img}` };
+          } else if (img.url) {
+            return { url: img.url };
           }
           return img;
         }),
       });
     }
-  }, [isEdit, existing, products]);
+  }, [isEdit, existing]);
 
   return (
     <AdminLayout>
@@ -166,15 +166,11 @@ export default function ProductForm() {
               value={form.name}
               onChange={set("name")}
               className={`w-full rounded-xl border px-4 py-3 outline-none ${
-                errors.name
-                  ? "border-red-500 bg-red-50"
-                  : "border-[#e5e8d2] bg-[#fbfcee]"
+                errors.name ? "border-red-500 bg-red-50" : "border-[#e5e8d2] bg-[#fbfcee]"
               } focus:border-[#3971b8]`}
               placeholder="Nama Produk"
             />
-            {errors.name && (
-              <p className="text-sm text-red-600 mt-1">{errors.name}</p>
-            )}
+            {errors.name && <p className="text-sm text-red-600 mt-1">{errors.name}</p>}
           </section>
 
           {/* Category & Price */}
@@ -185,9 +181,7 @@ export default function ProductForm() {
                 value={form.category}
                 onChange={set("category")}
                 className={`w-full rounded-xl border px-4 py-3 outline-none ${
-                  errors.category
-                    ? "border-red-500 bg-red-50"
-                    : "border-[#e5e8d2] bg-[#fbfcee]"
+                  errors.category ? "border-red-500 bg-red-50" : "border-[#e5e8d2] bg-[#fbfcee]"
                 } focus:border-[#3971b8]`}
               >
                 <option value="">— Choose —</option>
@@ -196,9 +190,7 @@ export default function ProductForm() {
                 <option value="3">Pants</option>
                 <option value="4">Outerwear</option>
               </select>
-              {errors.category && (
-                <p className="text-sm text-red-600 mt-1">{errors.category}</p>
-              )}
+              {errors.category && <p className="text-sm text-red-600 mt-1">{errors.category}</p>}
             </div>
 
             <div>
@@ -209,50 +201,36 @@ export default function ProductForm() {
                 onChange={set("price")}
                 onWheel={(e) => e.target.blur()}
                 className={`w-full rounded-xl border px-4 py-3 outline-none ${
-                  errors.price
-                    ? "border-red-500 bg-red-50"
-                    : "border-[#e5e8d2] bg-[#fbfcee]"
+                  errors.price ? "border-red-500 bg-red-50" : "border-[#e5e8d2] bg-[#fbfcee]"
                 } focus:border-[#3971b8]`}
                 placeholder={formatIDR(0)}
               />
-              {errors.price && (
-                <p className="text-sm text-red-600 mt-1">{errors.price}</p>
-              )}
+              {errors.price && <p className="text-sm text-red-600 mt-1">{errors.price}</p>}
             </div>
           </section>
 
-          {/* 🧩 Stock by Size */}
+          {/* Stock by Size */}
           <section>
             <h3 className="text-xl font-semibold mb-2">Stock by Size</h3>
-            <div
-              className={`rounded-xl border p-4 ${
-                errors.sizes
-                  ? "border-red-500 bg-red-50"
-                  : "border-[#e5e8d2] bg-[#fbfcee]"
-              }`}
-            >
+            <div className={`rounded-xl border p-4 ${errors.sizes ? "border-red-500 bg-red-50" : "border-[#e5e8d2] bg-[#fbfcee]"}`}>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {form.sizes.map((s, i) => (
                   <div key={i}>
-                    <label className="block text-sm font-medium mb-1">
-                      {s.size}
-                    </label>
+                    <label className="block text-sm font-medium mb-1">{s.size}</label>
                     <input
                       type="number"
                       min="0"
                       value={s.stock}
                       onChange={(e) => setSizeStock(i, e.target.value)}
                       onBlur={() => {
-                        if (s.stock === "") setSizeStock(i, 0); // kalau dikosongin terus pindah fokus → jadi 0
+                        if (s.stock === "") setSizeStock(i, 0);
                       }}
                       className="w-full rounded-xl border px-3 py-2 outline-none border-[#e5e8d2] focus:border-[#3971b8]"
                     />
                   </div>
                 ))}
               </div>
-              {errors.sizes && (
-                <p className="text-sm text-red-600 mt-2">{errors.sizes}</p>
-              )}
+              {errors.sizes && <p className="text-sm text-red-600 mt-2">{errors.sizes}</p>}
             </div>
           </section>
 
@@ -264,27 +242,17 @@ export default function ProductForm() {
               value={form.description}
               onChange={set("description")}
               className={`w-full rounded-xl border px-4 py-3 outline-none ${
-                errors.description
-                  ? "border-red-500 bg-red-50"
-                  : "border-[#e5e8d2] bg-[#fbfcee]"
+                errors.description ? "border-red-500 bg-red-50" : "border-[#e5e8d2] bg-[#fbfcee]"
               } focus:border-[#3971b8]`}
               placeholder="…"
             />
-            {errors.description && (
-              <p className="text-sm text-red-600 mt-1">{errors.description}</p>
-            )}
+            {errors.description && <p className="text-sm text-red-600 mt-1">{errors.description}</p>}
           </section>
 
           {/* Upload Image */}
           <section>
             <h3 className="text-xl font-semibold mb-2">Upload Image</h3>
-            <div
-              className={`rounded-xl border p-4 ${
-                errors.images
-                  ? "border-red-500 bg-red-50"
-                  : "border-[#e5e8d2] bg-[#fbfcee]"
-              }`}
-            >
+            <div className={`rounded-xl border p-4 ${errors.images ? "border-red-500 bg-red-50" : "border-[#e5e8d2] bg-[#fbfcee]"}`}>
               <input
                 type="file"
                 multiple
@@ -304,17 +272,7 @@ export default function ProductForm() {
                 <div className="mt-4 flex flex-wrap gap-4">
                   {form.images.map((img, i) => (
                     <div key={i} className="relative w-28 h-20">
-                      <img
-                        src={
-                          img.url
-                            ? img.url
-                            : img.startsWith("http")
-                            ? img
-                            : `http://localhost:5000${img}`
-                        }
-                        alt={`preview-${i}`}
-                        className="w-full h-full object-cover rounded"
-                      />
+                      <img src={img.url} alt={`preview-${i}`} className="w-full h-full object-cover rounded" />
                       <button
                         type="button"
                         onClick={() => removeImage(i)}
@@ -326,36 +284,15 @@ export default function ProductForm() {
                   ))}
                 </div>
               )}
-              {errors.images && (
-                <p className="text-sm text-red-600 mt-2">{errors.images}</p>
-              )}
+              {errors.images && <p className="text-sm text-red-600 mt-2">{errors.images}</p>}
             </div>
           </section>
 
           {/* Actions */}
           <div className="flex flex-wrap gap-3 justify-center sm:justify-start mt-4">
-            <button
-              type="button"
-              onClick={() => window.history.back()}
-              className="rounded-xl px-8 py-3 font-medium bg-[#3a4425] text-[#fbfcee]/90 hover:opacity-95"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="rounded-xl px-8 py-3 font-medium bg-[#3971b8] text-[#fbfcee] hover:opacity-95"
-            >
-              Save
-            </button>
-            {isEdit && (
-              <button
-                type="button"
-                onClick={() => setShowConfirm(true)}
-                className="rounded-xl px-8 py-3 font-medium bg-[#e11d1d] text-white hover:opacity-95"
-              >
-                Delete
-              </button>
-            )}
+            <button type="button" onClick={() => window.history.back()} className="rounded-xl px-8 py-3 font-medium bg-[#3a4425] text-[#fbfcee]/90 hover:opacity-95">Cancel</button>
+            <button type="submit" className="rounded-xl px-8 py-3 font-medium bg-[#3971b8] text-[#fbfcee] hover:opacity-95">Save</button>
+            {isEdit && <button type="button" onClick={() => setShowConfirm(true)} className="rounded-xl px-8 py-3 font-medium bg-[#e11d1d] text-white hover:opacity-95">Delete</button>}
           </div>
         </form>
       </div>

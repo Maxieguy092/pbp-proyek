@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminLayout from "../../templates/AdminLayout/AdminLayout";
 import { formatIDR } from "../../../contexts/CartContext";
+import { fetchOrders } from "../../../api/orders";
 
 const IconOrder = (props) => (
   <svg
@@ -59,36 +60,13 @@ const IconDone = (props) => (
 export default function AdminHome() {
   const [orders, setOrders] = useState([]);
 
-  useEffect(() => {
-    // ambil mock data order dari OrderManagement.jsx
-    const MOCK_ORDERS = [
-      {
-        id: "ORD-001",
-        customer: "Ganteng",
-        total: 1999000,
-        address: "Jl. Diponegoro No. 1",
-        status: "Pending",
-        date: "28 Sep 2025",
-      },
-      {
-        id: "ORD-002",
-        customer: "Andi",
-        total: 2999000,
-        address: "Jl. Pandanaran No. 5",
-        status: "Processing",
-        date: "28 Sep 2025",
-      },
-      {
-        id: "ORD-003",
-        customer: "Budi",
-        total: 1599000,
-        address: "Jl. Undip Raya",
-        status: "Delivering",
-        date: "27 Sep 2025",
-      },
-    ];
-    setOrders(MOCK_ORDERS);
-  }, []);
+   useEffect(() => {
+    //  setLoading(true);
+     fetchOrders()
+       .then(setOrders)
+       .catch((err) => console.error(err))
+       .finally(() => setLoading(false));
+   }, []);
 
   const totalOrders = orders.length;
   const totalPending = orders.filter((o) => o.status === "Pending").length;
@@ -105,9 +83,14 @@ export default function AdminHome() {
           credentials: "include",
         });
         if (!res.ok) throw new Error();
+        const data = await res.json();
+        if (data.role !== "admin"){
+          navigate("/");
+          return;
+        };
         setAuthorized(true);
       } catch {
-        navigate("/login"); // redirect if not admin
+        navigate("/"); // redirect if not admin
       } finally {
         setChecked(true);
       }
