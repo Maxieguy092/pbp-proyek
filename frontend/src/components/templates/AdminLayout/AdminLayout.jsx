@@ -1,16 +1,41 @@
 // ==================================================
 // 📁 src/components/templates/AdminLayout/AdminLayout.jsx
 // ==================================================
+import { useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
 import HeaderBar from "../../organisms/HeaderBar/HeaderBar";
-import { NavLink, Link } from "react-router-dom";
+import ConfirmModal from "../../molecules/ConfirmModal/ConfirmModal";
 
 export default function AdminLayout({ children }) {
+  const navigate = useNavigate();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleLogout = () => {
+    fetch("/api/logout", {
+      method: "POST",
+      credentials: "include",
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Logout failed");
+        navigate("/login");
+      })
+      .catch((err) => console.error("Error during logout:", err));
+  };
+
   return (
     <div className="min-h-screen bg-[#fbfcee] text-[#2b2b2b]">
-      {/* tetap pakai header hijau */}
+      {/* Panggil modal dengan props yang sesuai */}
+      <ConfirmModal
+        open={isModalOpen}
+        title="Sign Out"
+        message="Apakah anda yakin ingin sign out?"
+        onCancel={() => setIsModalOpen(false)}
+        onConfirm={handleLogout}
+        confirmText="Sign Out" // Gunakan prop confirmText
+      />
+
       <HeaderBar />
 
-      {/* second navbar khusus admin */}
       <nav className="bg-[#fbfcee] border-b border-[#d3e0a9]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <ul className="flex justify-center items-center gap-10 py-3 text-sm sm:text-base text-[#3971b8]">
@@ -45,9 +70,12 @@ export default function AdminLayout({ children }) {
               </NavLink>
             </li>
             <li>
-              <Link to="/login" className="hover:opacity-90">
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="hover:text-red-500 transition"
+              >
                 Sign Out
-              </Link>
+              </button>
             </li>
           </ul>
         </div>

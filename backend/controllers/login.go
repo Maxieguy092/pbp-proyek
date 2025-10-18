@@ -10,11 +10,10 @@ import (
 
 	db "github.com/Maxiegame092/pbp-app/DB"
 	"github.com/gin-gonic/gin"
-	"github.com/go-sql-driver/mysql" // Impor driver MySQL untuk error handling
-	"golang.org/x/crypto/bcrypt"     // Impor package bcrypt untuk hashing
+	"github.com/go-sql-driver/mysql"
+	"golang.org/x/crypto/bcrypt"
 )
 
-// Struct untuk request body
 type LoginRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
@@ -27,7 +26,6 @@ type RegisterRequest struct {
 	Password  string `json:"password"`
 }
 
-// Manajemen sesi sederhana (in-memory)
 var Sessions = map[string]string{}
 
 func generateSessionID() string {
@@ -36,11 +34,6 @@ func generateSessionID() string {
 	return hex.EncodeToString(b)
 }
 
-// ================================================================
-//
-//	FUNGSI REGISTER BARU
-//
-// ================================================================
 func Register(c *gin.Context) {
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -76,11 +69,6 @@ func Register(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "User registered successfully"})
 }
 
-// ================================================================
-//
-//	FUNGSI LOGIN DENGAN PERBAIKAN KEAMANAN
-//
-// ================================================================
 func Login(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -88,7 +76,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	var firstName, lastName, email, psswrd, role string // <-- Tambah variabel 'role'
+	var firstName, lastName, email, psswrd, role string
 	err := db.DB.QueryRow("SELECT first_name, last_name, email, password_hash, role FROM users WHERE email = ?", req.Username).Scan(&firstName, &lastName, &email, &psswrd, &role) // <-- Tambah 'role' di query dan Scan
 	
 	if err == sql.ErrNoRows {
@@ -106,20 +94,17 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// --- BAGIAN YANG DIPERBAIKI ---
-	// 1. Buat sesi dan cookie terlebih dahulu
 	sessionID := generateSessionID()
-	Sessions[sessionID] = email // Simpan email sebagai identifier sesi
+	Sessions[sessionID] = email 
 	c.SetCookie("session_token", sessionID, 30*60, "/", "localhost", false, true)
 
-	// 2. Kirim respons JSON dalam satu panggilan
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Login successful",
 		"user": gin.H{
 			"firstName": firstName,
 			"lastName":  lastName,
 			"email":     email,
-			"role":      role, // <-- TAMBAHKAN BARIS INI
+			"role":      role, 
 		},
 	})
 }
@@ -184,7 +169,6 @@ func RequireAdmin() gin.HandlerFunc {
 			return
 		}
 
-		// store email in context for next handlers if needed
 		c.Set("email", email)
 		c.Next()
 	}

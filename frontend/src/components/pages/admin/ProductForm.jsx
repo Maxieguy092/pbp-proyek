@@ -85,7 +85,8 @@ export default function ProductForm() {
   const validate = () => {
     const newErrors = {};
     if (!form.name.trim()) newErrors.name = "Product name is required.";
-    if (!form.category.trim()) newErrors.category = "Category must be selected.";
+    if (!form.category.trim())
+      newErrors.category = "Category must be selected.";
     if (!form.price || form.price <= 0)
       newErrors.price = "Price must be greater than 0.";
     if (!form.description.trim())
@@ -144,7 +145,9 @@ export default function ProductForm() {
         description: existing.description || "",
         images: (existing.images || []).map((img) => {
           if (typeof img === "string") {
-            return { url: img.startsWith("http") ? img : `http://localhost:5000${img}` };
+            return {
+              url: img.startsWith("http") ? img : `http://localhost:5000${img}`,
+            };
           } else if (img.url) {
             return { url: img.url };
           }
@@ -158,7 +161,6 @@ export default function ProductForm() {
     <AdminLayout>
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8">
         <form onSubmit={save} className="space-y-8">
-
           {/* Product Name */}
           <section>
             <h3 className="text-xl font-semibold mb-2">Product Name</h3>
@@ -166,11 +168,15 @@ export default function ProductForm() {
               value={form.name}
               onChange={set("name")}
               className={`w-full rounded-xl border px-4 py-3 outline-none ${
-                errors.name ? "border-red-500 bg-red-50" : "border-[#e5e8d2] bg-[#fbfcee]"
+                errors.name
+                  ? "border-red-500 bg-red-50"
+                  : "border-[#e5e8d2] bg-[#fbfcee]"
               } focus:border-[#3971b8]`}
               placeholder="Nama Produk"
             />
-            {errors.name && <p className="text-sm text-red-600 mt-1">{errors.name}</p>}
+            {errors.name && (
+              <p className="text-sm text-red-600 mt-1">{errors.name}</p>
+            )}
           </section>
 
           {/* Category & Price */}
@@ -181,7 +187,9 @@ export default function ProductForm() {
                 value={form.category}
                 onChange={set("category")}
                 className={`w-full rounded-xl border px-4 py-3 outline-none ${
-                  errors.category ? "border-red-500 bg-red-50" : "border-[#e5e8d2] bg-[#fbfcee]"
+                  errors.category
+                    ? "border-red-500 bg-red-50"
+                    : "border-[#e5e8d2] bg-[#fbfcee]"
                 } focus:border-[#3971b8]`}
               >
                 <option value="">— Choose —</option>
@@ -190,7 +198,9 @@ export default function ProductForm() {
                 <option value="3">Pants</option>
                 <option value="4">Outerwear</option>
               </select>
-              {errors.category && <p className="text-sm text-red-600 mt-1">{errors.category}</p>}
+              {errors.category && (
+                <p className="text-sm text-red-600 mt-1">{errors.category}</p>
+              )}
             </div>
 
             <div>
@@ -201,22 +211,34 @@ export default function ProductForm() {
                 onChange={set("price")}
                 onWheel={(e) => e.target.blur()}
                 className={`w-full rounded-xl border px-4 py-3 outline-none ${
-                  errors.price ? "border-red-500 bg-red-50" : "border-[#e5e8d2] bg-[#fbfcee]"
+                  errors.price
+                    ? "border-red-500 bg-red-50"
+                    : "border-[#e5e8d2] bg-[#fbfcee]"
                 } focus:border-[#3971b8]`}
                 placeholder={formatIDR(0)}
               />
-              {errors.price && <p className="text-sm text-red-600 mt-1">{errors.price}</p>}
+              {errors.price && (
+                <p className="text-sm text-red-600 mt-1">{errors.price}</p>
+              )}
             </div>
           </section>
 
           {/* Stock by Size */}
           <section>
             <h3 className="text-xl font-semibold mb-2">Stock by Size</h3>
-            <div className={`rounded-xl border p-4 ${errors.sizes ? "border-red-500 bg-red-50" : "border-[#e5e8d2] bg-[#fbfcee]"}`}>
+            <div
+              className={`rounded-xl border p-4 ${
+                errors.sizes
+                  ? "border-red-500 bg-red-50"
+                  : "border-[#e5e8d2] bg-[#fbfcee]"
+              }`}
+            >
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {form.sizes.map((s, i) => (
                   <div key={i}>
-                    <label className="block text-sm font-medium mb-1">{s.size}</label>
+                    <label className="block text-sm font-medium mb-1">
+                      {s.size}
+                    </label>
                     <input
                       type="number"
                       min="0"
@@ -230,7 +252,9 @@ export default function ProductForm() {
                   </div>
                 ))}
               </div>
-              {errors.sizes && <p className="text-sm text-red-600 mt-2">{errors.sizes}</p>}
+              {errors.sizes && (
+                <p className="text-sm text-red-600 mt-2">{errors.sizes}</p>
+              )}
             </div>
           </section>
 
@@ -242,17 +266,27 @@ export default function ProductForm() {
               value={form.description}
               onChange={set("description")}
               className={`w-full rounded-xl border px-4 py-3 outline-none ${
-                errors.description ? "border-red-500 bg-red-50" : "border-[#e5e8d2] bg-[#fbfcee]"
+                errors.description
+                  ? "border-red-500 bg-red-50"
+                  : "border-[#e5e8d2] bg-[#fbfcee]"
               } focus:border-[#3971b8]`}
               placeholder="…"
             />
-            {errors.description && <p className="text-sm text-red-600 mt-1">{errors.description}</p>}
+            {errors.description && (
+              <p className="text-sm text-red-600 mt-1">{errors.description}</p>
+            )}
           </section>
 
           {/* Upload Image */}
           <section>
             <h3 className="text-xl font-semibold mb-2">Upload Image</h3>
-            <div className={`rounded-xl border p-4 ${errors.images ? "border-red-500 bg-red-50" : "border-[#e5e8d2] bg-[#fbfcee]"}`}>
+            <div
+              className={`rounded-xl border p-4 ${
+                errors.images
+                  ? "border-red-500 bg-red-50"
+                  : "border-[#e5e8d2] bg-[#fbfcee]"
+              }`}
+            >
               <input
                 type="file"
                 multiple
@@ -272,7 +306,11 @@ export default function ProductForm() {
                 <div className="mt-4 flex flex-wrap gap-4">
                   {form.images.map((img, i) => (
                     <div key={i} className="relative w-28 h-20">
-                      <img src={img.url} alt={`preview-${i}`} className="w-full h-full object-cover rounded" />
+                      <img
+                        src={img.url}
+                        alt={`preview-${i}`}
+                        className="w-full h-full object-cover rounded"
+                      />
                       <button
                         type="button"
                         onClick={() => removeImage(i)}
@@ -284,22 +322,44 @@ export default function ProductForm() {
                   ))}
                 </div>
               )}
-              {errors.images && <p className="text-sm text-red-600 mt-2">{errors.images}</p>}
+              {errors.images && (
+                <p className="text-sm text-red-600 mt-2">{errors.images}</p>
+              )}
             </div>
           </section>
 
           {/* Actions */}
           <div className="flex flex-wrap gap-3 justify-center sm:justify-start mt-4">
-            <button type="button" onClick={() => window.history.back()} className="rounded-xl px-8 py-3 font-medium bg-[#3a4425] text-[#fbfcee]/90 hover:opacity-95">Cancel</button>
-            <button type="submit" className="rounded-xl px-8 py-3 font-medium bg-[#3971b8] text-[#fbfcee] hover:opacity-95">Save</button>
-            {isEdit && <button type="button" onClick={() => setShowConfirm(true)} className="rounded-xl px-8 py-3 font-medium bg-[#e11d1d] text-white hover:opacity-95">Delete</button>}
+            <button
+              type="button"
+              onClick={() => window.history.back()}
+              className="rounded-xl px-8 py-3 font-medium bg-[#3a4425] text-[#fbfcee]/90 hover:opacity-95"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="rounded-xl px-8 py-3 font-medium bg-[#3971b8] text-[#fbfcee] hover:opacity-95"
+            >
+              Save
+            </button>
+            {isEdit && (
+              <button
+                type="button"
+                onClick={() => setShowConfirm(true)}
+                className="rounded-xl px-8 py-3 font-medium bg-[#e11d1d] text-white hover:opacity-95"
+              >
+                Delete
+              </button>
+            )}
           </div>
         </form>
       </div>
 
       <ConfirmModal
         open={showConfirm}
-        message="Do you really want to delete this product? This process cannot be undone."
+        title="Konfirmasi Penghapusan" // Judul bisa dibuat lebih spesifik
+        message="Apakah anda yakin ingin menghapus produk ini? Aksi ini tidak dapat dibatalkan."
         onCancel={() => setShowConfirm(false)}
         onConfirm={del}
       />

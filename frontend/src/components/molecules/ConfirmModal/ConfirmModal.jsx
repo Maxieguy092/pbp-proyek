@@ -7,6 +7,8 @@ export default function ConfirmModal({
   message,
   onCancel,
   onConfirm,
+  confirmText = "Delete", // Prop baru dengan nilai default "Delete"
+  cancelText = "Cancel", // Prop baru dengan nilai default "Cancel"
 }) {
   if (!open) return null;
   return (
@@ -24,13 +26,13 @@ export default function ConfirmModal({
               onClick={onCancel}
               className="rounded-xl px-5 py-2 font-medium bg-[#a3a89a] text-white hover:opacity-95"
             >
-              Cancel
+              {cancelText}
             </button>
             <button
               onClick={onConfirm}
               className="rounded-xl px-5 py-2 font-medium bg-[#e11d1d] text-white hover:opacity-95"
             >
-              Delete
+              {confirmText}
             </button>
           </div>
         </div>
