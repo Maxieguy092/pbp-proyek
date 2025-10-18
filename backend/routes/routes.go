@@ -20,9 +20,9 @@ func SetupRoutes(r *gin.Engine) {
 		api.GET("/products", controllers.GetProducts)
 		api.GET("/products/:id", controllers.GetProductByID)
 
-		api.GET("/admin/orders", controllers.GetOrders)
-		api.GET("/admin/orders/:id", controllers.GetOrderByID)
-		api.PUT("/admin/orders/:id/status", controllers.UpdateOrderStatus)
+		// api.GET("/admin/orders", controllers.GetOrders)
+		// api.GET("/admin/orders/:id", controllers.GetOrderByID)
+		// api.PUT("/admin/orders/:id/status", controllers.UpdateOrderStatus)
 
 		// Grup route yang dilindungi otentikasi
 		auth := api.Group("/")
@@ -49,9 +49,14 @@ func SetupRoutes(r *gin.Engine) {
 	admin := api.Group("/admin")
 	admin.Use(controllers.RequireAdmin())
 	{
+
+		admin.GET("/orders", controllers.GetOrders)
+		admin.GET("/orders/:id", controllers.GetOrderByID)
+		admin.PUT("/orders/:id/status", controllers.UpdateOrderStatus)
 		admin.POST("/products", controllers.CreateProduct)
 		admin.PUT("/products/:id", controllers.UpdateProduct)
 		admin.DELETE("/products/:id", controllers.DeleteProduct)
+		admin.GET("/check-session", controllers.CheckAdminSession)
 
 		// You can add more admin endpoints here
 		admin.GET("/dashboard", func(c *gin.Context) {

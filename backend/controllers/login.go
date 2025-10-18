@@ -165,7 +165,7 @@ func RequireAdmin() gin.HandlerFunc {
 			return
 		}
 
-		email, exists := sessions[cookie]
+		email, exists := Sessions[cookie]
 		if !exists {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired session"})
 			return
@@ -187,4 +187,36 @@ func RequireAdmin() gin.HandlerFunc {
 		c.Set("email", email)
 		c.Next()
 	}
+}
+
+func CheckAdminSession(c *gin.Context) {
+	cookie, err := c.Cookie("session_token")
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "no session cookie"})
+		return
+	}
+
+	email, exists := Sessions[cookie]
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired session"})
+		return
+	}
+
+	var role string
+	err = db.DB.QueryRow("SELECT role FROM users WHERE email = ?", email).Scan(&role)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch user role"})
+		return
+	}
+
+	if role != "admin" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden: admin only"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Admin session valid",
+		"email":   email,
+		"role":    role,
+	})
 }

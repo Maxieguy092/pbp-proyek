@@ -51,9 +51,10 @@ export function ProductProvider({ children }) {
         }
       });
 
-      const res = await fetch("http://localhost:5000/api/products", {
+      const res = await fetch("http://localhost:5000/api/admin/products", {
         method: "POST",
         body: formData, 
+        credentials: "include",
       });
 
       const data = await res.json();
@@ -88,9 +89,10 @@ export function ProductProvider({ children }) {
         }
       });
 
-      const res = await fetch(`http://localhost:5000/api/products/${id}`, {
+      const res = await fetch(`http://localhost:5000/api/admin/products/${id}`, {
         method: "PUT",
         body: formData,
+        credentials: "include",
       });
 
       if (!res.ok) {
@@ -113,8 +115,9 @@ export function ProductProvider({ children }) {
   // 🔹 Hapus produk (DELETE ke backend)
   const deleteProduct = async (id) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/products/${id}`, {
+      const res = await fetch(`http://localhost:5000/api/admin/products/${id}`, {
         method: "DELETE",
+        credentials: "include",
       });
       if (!res.ok) throw new Error("Gagal menghapus produk");
 

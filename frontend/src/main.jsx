@@ -19,7 +19,7 @@ import ProductDetailPage from "./components/pages/ProductDetailPage.jsx";
 import DashboardLayout from "./components/templates/DashboardLayout/DashboardLayout.jsx";
 import ProfilePage from "./components/pages/Dashboard/ProfilePage.jsx";
 import OrdersPage from "./components/pages/Dashboard/OrdersPage.jsx";
-import OrderDetail from "./components/pages/admin/OrderDetail.jsx";
+// import OrderDetail from "./components/pages/admin/OrderDetail.jsx";
 
 import AdminHome from "./components/pages/admin/AdminHome.jsx";
 import ProductManagementList from "./components/pages/admin/ProductManagementList.jsx";

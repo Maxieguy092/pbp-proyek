@@ -2,6 +2,7 @@
 // 📁 src/components/pages/admin/AdminHome.jsx
 // ==================================================
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import AdminLayout from "../../templates/AdminLayout/AdminLayout";
 import { formatIDR } from "../../../contexts/CartContext";
 
@@ -92,6 +93,30 @@ export default function AdminHome() {
   const totalOrders = orders.length;
   const totalPending = orders.filter((o) => o.status === "Pending").length;
   const totalDone = orders.filter((o) => o.status === "Done").length;
+
+  const [authorized, setAuthorized] = useState(false);
+  const [checked, setChecked] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    async function verifyAdmin() {
+      try {
+        const res = await fetch("/api/admin/check-session", {
+          credentials: "include",
+        });
+        if (!res.ok) throw new Error();
+        setAuthorized(true);
+      } catch {
+        navigate("/login"); // redirect if not admin
+      } finally {
+        setChecked(true);
+      }
+    }
+    verifyAdmin();
+  }, [navigate]);
+
+  if (!checked) return <p>Checking session...</p>;
+  if (!authorized) return <p>Access denied.</p>;
 
   return (
     <AdminLayout>
