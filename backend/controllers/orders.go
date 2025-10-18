@@ -3,11 +3,128 @@ package controllers
 import (
 	"encoding/json" // Impor package JSON
 	"net/http"
+	"sort"
 	"strings"
+	"time"
 
 	db "github.com/Maxiegame092/pbp-app/DB"
 	"github.com/gin-gonic/gin"
 )
+
+// Struct ini akan kita gunakan sebagai format respons untuk daftar pesanan pengguna.
+type UserOrderItem struct {
+	Name     string  `json:"name"`
+	ImageURL string  `json:"imageUrl"`
+	Qty      int     `json:"qty"`
+	Price    float64 `json:"price"`
+}
+
+type UserOrderDetail struct {
+	ID             int             `json:"id"`
+	Date           string          `json:"date"`
+	Status         string          `json:"status"`
+	Total          float64         `json:"total"`
+	ShippingName   string          `json:"shippingName"`
+	ShippingEmail  string          `json:"shippingEmail"`
+	PaymentOption  string          `json:"paymentOption"`
+	Items          []UserOrderItem `json:"items"`
+	ShippingPhone  string          `json:"shippingPhone"`
+	PaymentDetails string          `json:"paymentDetails"`
+	AddressText    string          `json:"addressText"`
+}
+
+// GetUserOrders: Mengambil riwayat pesanan untuk user yang sedang login.
+func GetUserOrders(c *gin.Context) {
+	userIDInterface, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+	userID, _ := userIDInterface.(int)
+
+	// 1. Query diubah untuk mengambil kolom baru:
+	// o.address_text, o.shipping_phone, o.payment_details
+	query := `
+		SELECT 
+			o.id, o.created_at, o.status, o.total, 
+			o.shipping_name, o.shipping_email, o.payment_option,
+			o.address_text, o.shipping_phone, o.payment_details,
+			oi.qty, p.name, p.image_url, p.price
+		FROM orders o
+		JOIN order_items oi ON o.id = oi.order_id
+		JOIN products p ON oi.product_id = p.id
+		WHERE o.user_id = ?
+		ORDER BY o.created_at DESC, o.id
+	`
+	rows, err := db.DB.Query(query, userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database query error"})
+		return
+	}
+	defer rows.Close()
+
+	ordersMap := make(map[int]*UserOrderDetail)
+	for rows.Next() {
+		var orderID int
+		var createdAt time.Time
+		// 2. Deklarasikan variabel baru untuk menampung data
+		var status, shippingName, shippingEmail, paymentOption, productName, productImageUrl, addressText, shippingPhone, paymentDetails string
+		var total, productPrice float64
+		var productQty int
+
+		// 3. Sesuaikan urutan Scan dengan urutan SELECT di query
+		err := rows.Scan(
+			&orderID, &createdAt, &status, &total,
+			&shippingName, &shippingEmail, &paymentOption,
+			&addressText, &shippingPhone, &paymentDetails,
+			&productQty, &productName, &productImageUrl, &productPrice,
+		)
+		if err != nil {
+			continue
+		}
+
+		if _, ok := ordersMap[orderID]; !ok {
+			ordersMap[orderID] = &UserOrderDetail{
+				ID:            orderID,
+				Date:          createdAt.Format("02 Jan 2006"),
+				Status:        status,
+				Total:         total,
+				ShippingName:  shippingName,
+				ShippingEmail: shippingEmail,
+				PaymentOption: paymentOption,
+				Items:         make([]UserOrderItem, 0),
+				// 4. Masukkan data baru ke dalam struct
+				AddressText:    addressText,
+				ShippingPhone:  shippingPhone,
+				PaymentDetails: paymentDetails,
+			}
+		}
+
+		ordersMap[orderID].Items = append(ordersMap[orderID].Items, UserOrderItem{
+			Name:     productName,
+			ImageURL: productImageUrl,
+			Qty:      productQty,
+			Price:    productPrice,
+		})
+	}
+	
+	ordersList := make([]UserOrderDetail, 0, len(ordersMap))
+	// Gunakan loop `for _, order := range ordersMap` yang aman untuk pointer
+	ids := make([]int, 0, len(ordersMap))
+	for id := range ordersMap {
+		ids = append(ids, id)
+	}
+	// Sortir untuk memastikan urutan konsisten
+	sort.Slice(ids, func(i, j int) bool {
+		return ids[i] > ids[j] // Urutkan dari ID terbesar (terbaru)
+	})
+
+	for _, id := range ids {
+		ordersList = append(ordersList, *ordersMap[id])
+	}
+
+	c.JSON(http.StatusOK, ordersList)
+}
 
 // Struct untuk daftar pesanan di halaman OrderManagement
 // (Tidak ada perubahan di sini)

@@ -38,6 +38,7 @@ func SetupRoutes(r *gin.Engine) {
 			auth.DELETE("/cart/items/:id", controllers.DeleteCartItem)
 			auth.DELETE("/cart", controllers.ClearCart)	
 			auth.POST("/orders", controllers.CreateOrder)
+			auth.GET("/my-orders", controllers.GetUserOrders)
 			auth.GET("/check-auth", func(c *gin.Context) {
 				userID, exists := c.Get("user_id")
 				if !exists {
