@@ -28,7 +28,7 @@ type RegisterRequest struct {
 }
 
 // Manajemen sesi sederhana (in-memory)
-var sessions = map[string]string{}
+var Sessions = map[string]string{}
 
 func generateSessionID() string {
 	b := make([]byte, 16)
@@ -109,7 +109,7 @@ func Login(c *gin.Context) {
 	// --- BAGIAN YANG DIPERBAIKI ---
 	// 1. Buat sesi dan cookie terlebih dahulu
 	sessionID := generateSessionID()
-	sessions[sessionID] = email // Simpan email sebagai identifier sesi
+	Sessions[sessionID] = email // Simpan email sebagai identifier sesi
 	c.SetCookie("session_token", sessionID, 30*60, "/", "localhost", false, true)
 
 	// 2. Kirim respons JSON dalam satu panggilan
@@ -135,7 +135,7 @@ func CheckSession(c *gin.Context) {
 		return
 	}
 
-	email, exists := sessions[cookie]
+	email, exists := Sessions[cookie]
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired session"})
 		return

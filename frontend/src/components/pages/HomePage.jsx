@@ -64,7 +64,7 @@ export default function HomePage() {
           <ProductGridSection
             id="shirts"
             title="Shirts"
-            description="Kemeja premium untuk tampilan rapi."
+            description="Kemeja premium untuk tampilan rapi, nyaman dipakai dari pagi hingga malam."
             to="/shirts"
             products={products.shirts}
             limit={5} // ⬅️ Anda bisa sesuaikan limitnya
@@ -72,7 +72,7 @@ export default function HomePage() {
           <ProductGridSection
             id="tshirts"
             title="T-Shirts"
-            description="Kaos simpel dan versatile."
+            description="Kaos simpel dan versatile, mudah dipadu-padankan setiap kesempatan."
             to="/t-shirts"
             products={products.tshirts}
             limit={5}
@@ -80,7 +80,7 @@ export default function HomePage() {
           <ProductGridSection
             id="pants"
             title="Pants"
-            description="Potongan modern & nyaman."
+            description="Celana dengan potongan modern dah bahan nyaman, cocok untuk gaya formal maupun kasual."
             to="/pants"
             products={products.pants}
             limit={5}
@@ -88,7 +88,7 @@ export default function HomePage() {
           <ProductGridSection
             id="outerwear"
             title="Outerwear"
-            description="Lapisan stylish yang hangat."
+            description="Lapisan stylish untuk melengkapi penampilan - hangat, ringan, dan penuh karakter."
             to="/outerwear"
             products={products.outerwear}
             limit={5}

@@ -106,7 +106,9 @@ export default function AdminHome() {
           {/* Total Orders */}
           <div className="rounded-2xl bg-[#eef3d7] border border-[#d3e0a9] p-6 flex items-center justify-between hover:shadow-md transition">
             <div>
-              <h2 className="text-lg font-medium text-[#3a4425]">Total Orders</h2>
+              <h2 className="text-lg font-medium text-[#3a4425]">
+                Total Orders
+              </h2>
               <p className="text-3xl font-bold mt-2 text-[#3971b8]">
                 {totalOrders}
               </p>

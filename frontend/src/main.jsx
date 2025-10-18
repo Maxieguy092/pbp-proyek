@@ -1,9 +1,10 @@
 // src/main.jsx
-import { StrictMode, useState, useEffect } from "react";
+import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import "./index.css";
 
+// --- Impor semua komponen halaman Anda ---
 import HomePage from "./components/pages/HomePage.jsx";
 import ShirtsPage from "./components/pages/ShirtsPage.jsx";
 import TShirtsPage from "./components/pages/TShirtsPage.jsx";
@@ -24,13 +25,14 @@ import AdminHome from "./components/pages/admin/AdminHome.jsx";
 import ProductManagementList from "./components/pages/admin/ProductManagementList.jsx";
 import ProductForm from "./components/pages/admin/ProductForm.jsx";
 import OrderManagement from "./components/pages/admin/OrderManagement.jsx";
+import OrderDetail from "./components/pages/admin/OrderDetail.jsx";
 
+// --- Impor semua Provider Anda ---
 import { CartProvider } from "./contexts/CartContext.jsx";
 import { UserProvider } from "./contexts/UserContext.jsx";
 import { ProductProvider } from "./contexts/ProductContext.jsx";
-import OrderDetail from "./components/pages/admin/OrderDetail.jsx";
 
-// --- Optional: komponen error & 404 simple ---
+// --- Komponen Error & 404 ---
 function GlobalError() {
   return (
     <div className="min-h-screen flex items-center justify-center p-6 text-center">
@@ -53,7 +55,7 @@ function NotFound() {
   );
 }
 
-// Pakai basename biar path aman kalau deploy di subfolder (ikut Vite base)
+// --- Konfigurasi Router (tidak ada perubahan di sini) ---
 const router = createBrowserRouter(
   [
     { path: "/", element: <HomePage /> },
@@ -87,29 +89,29 @@ const router = createBrowserRouter(
     { path: "/admin/orders", element: <OrderManagement /> },
     { path: "/admin/orders/:id", element: <OrderDetail /> },
 
-    // 404 last
     { path: "*", element: <NotFound /> },
   ],
-  {
-    basename: import.meta.env.BASE_URL || "/",
-    // errorElement jalan kalau route error (optional)
-    // NB: errorElement berlaku per-route juga kalau mau
-    // tapi kita set global di RouterProvider di bawah
-  }
+  { basename: import.meta.env.BASE_URL || "/" }
 );
 
+// ================================================================
+// BAGIAN YANG DIPERBAIKI
+// ================================================================
+
+// Buat komponen App untuk membungkus semua Provider di satu tempat
 function App() {
   return (
     <UserProvider>
-      <CartProvider>
-        <ProductProvider>
+      <ProductProvider>
+        <CartProvider>
           <RouterProvider router={router} fallbackElement={<GlobalError />} />
-        </ProductProvider>
-      </CartProvider>
+        </CartProvider>
+      </ProductProvider>
     </UserProvider>
   );
 }
 
+// Render komponen App yang sudah berisi semua Provider
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <App />
