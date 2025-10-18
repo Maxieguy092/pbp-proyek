@@ -110,13 +110,12 @@ export default function ProductForm() {
     const finalForm = {
       ...form,
       stock: form.sizes.reduce((sum, s) => sum + s.stock, 0),
+      category_id: Number(form.category),
     };
 
-    if (isEdit)
-      await updateProduct(id, { ...finalForm, category_id: form.category });
-    else
-      await addProduct({ ...finalForm, category_id: form.category });
-
+      
+    if (isEdit) await updateProduct(id, finalForm);
+    else await addProduct(finalForm);
 
     nav("/admin/products");
   };
@@ -133,7 +132,7 @@ export default function ProductForm() {
     if (isEdit && existing.id) {
       setForm({
         name: existing.name || "",
-        category: existing.category || "",
+        category: existing.category_id?.toString() || "",
         price: existing.price || 0,
         sizes: existing.sizes || [
           { size: "S", stock: 0 },
@@ -153,7 +152,7 @@ export default function ProductForm() {
         }),
       });
     }
-  }, [isEdit, existing]);
+  }, [isEdit, existing, products]);
 
   return (
     <AdminLayout>

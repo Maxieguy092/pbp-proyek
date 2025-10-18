@@ -284,7 +284,22 @@ func UpdateProduct(c *gin.Context) {
         return
     }
 
-    c.JSON(http.StatusOK, gin.H{"message": "✅ Produk berhasil diperbarui", "images": allImages})
+    // 🔹 Ambil nama kategori setelah update
+	var categoryName string
+	_ = db.DB.QueryRow("SELECT name FROM categories WHERE id = ?", categoryID).Scan(&categoryName)
+
+	// 🔹 Kirim data produk lengkap ke frontend (biar state di React langsung update)
+	c.JSON(http.StatusOK, gin.H{
+		"id":          id,
+		"name":        name,
+		"price":       price,
+		"stock":       totalStock,
+		"category":    categoryName,
+		"description": description,
+		"images":      allImages,
+		"sizes":       sizes,
+	})
+
 }
 
 
