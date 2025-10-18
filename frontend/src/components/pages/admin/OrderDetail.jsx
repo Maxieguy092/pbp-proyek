@@ -1,6 +1,4 @@
-// ==================================================
-// 📁 src/components/pages/admin/OrderDetail.jsx
-// ==================================================
+// src/components/pages/admin/OrderDetail.jsx
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import AdminLayout from "../../templates/AdminLayout/AdminLayout";
@@ -114,7 +112,6 @@ export default function OrderDetail() {
             <div className="grid grid-cols-2 gap-y-3 gap-x-8">
               <div>
                 <p className="font-semibold">Order Id</p>
-                {/* ID SUDAH DIFORMAT */}
                 <p>ORD-{String(order.id).padStart(3, "0")}</p>
               </div>
               <div className="pl-12">
@@ -185,7 +182,6 @@ export default function OrderDetail() {
             </div>
           </div>
 
-          {/* === BLOK BARU UNTUK ALAMAT, PENGIRIMAN & PEMBAYARAN === */}
           <div className="w-full lg:w-80 space-y-4">
             <div className="border border-[#d3e0a9] bg-[#fbfcee] rounded-lg p-4 text-sm">
               <p className="font-semibold mb-2">Delivery Address</p>

@@ -1,4 +1,4 @@
-const API_BASE_PATH = import.meta.env.VITE_API_URL; // Ini akan bernilai "/api"
+const API_BASE_PATH = import.meta.env.VITE_API_URL;
 
 export async function fetchProducts({ category } = {}) {
   let urlString = `${API_BASE_PATH}/products`;

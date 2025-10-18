@@ -1,6 +1,4 @@
-// ==================================================
-// 📁 src/components/pages/admin/OrderManagement.jsx
-// ==================================================
+// src/components/pages/admin/OrderManagement.jsx
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AdminLayout from "../../templates/AdminLayout/AdminLayout";
@@ -31,13 +29,13 @@ export default function OrderManagement() {
         });
         if (!res.ok) throw new Error();
         const data = await res.json();
-        if (data.role !== "admin"){
+        if (data.role !== "admin") {
           navigate("/");
           return;
-        };
+        }
         setAuthorized(true);
       } catch {
-        navigate("/"); // redirect if not admin
+        navigate("/");
       } finally {
         setChecked(true);
       }
@@ -109,7 +107,6 @@ export default function OrderManagement() {
               {orders.map((o) => (
                 <tr key={o.id} className="border-b border-[#d3e0a9]">
                   <td className="py-3 px-4 font-medium">
-                    {/* ID SUDAH DIFORMAT */}
                     ORD-{String(o.id).padStart(3, "0")}
                   </td>
                   <td className="py-3 px-4">{o.customer}</td>

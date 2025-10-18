@@ -1,14 +1,12 @@
-// 📁 src/components/organisms/CartDrawer/CartDrawer.jsx
+// src/components/organisms/CartDrawer/CartDrawer.jsx
 import { useNavigate } from "react-router-dom";
 import { useCart, formatIDR } from "../../../contexts/CartContext";
 
 const FALLBACK_IMG = "/images/fallback.png";
 
-// Hapus props 'open' dan 'onClose' dari parameter
 export default function CartDrawer() {
   const nav = useNavigate();
 
-  // Ambil 'isCartOpen' dan 'closeCart' langsung dari context
   const {
     items,
     increment,
@@ -16,11 +14,10 @@ export default function CartDrawer() {
     remove,
     clear,
     total,
-    isCartOpen, // <-- Ambil state ini
-    closeCart, // <-- Ambil fungsi ini
+    isCartOpen,
+    closeCart,
   } = useCart();
 
-  // Gunakan 'isCartOpen' untuk menentukan render, bukan props 'open'
   if (!isCartOpen) return null;
 
   return (
@@ -28,7 +25,7 @@ export default function CartDrawer() {
       {/* overlay */}
       <button
         aria-label="Close cart overlay"
-        onClick={closeCart} // Gunakan 'closeCart' dari context
+        onClick={closeCart}
         className="fixed inset-0 bg-black/10 backdrop-blur-[1px] z-40"
       />
       {/* panel */}
@@ -36,7 +33,7 @@ export default function CartDrawer() {
         <div className="flex items-center justify-between px-6 h-16 border-b border-[#d3e0a9]">
           <h2 className="text-2xl font-semibold text-[#2b2b2b]">Cart</h2>
           <button
-            onClick={closeCart} // Gunakan 'closeCart' dari context
+            onClick={closeCart}
             className="text-xl px-2 py-1 rounded-lg hover:bg-[#e1eac4] text-[#3971b8]"
             aria-label="Close"
           >
@@ -91,10 +88,8 @@ export default function CartDrawer() {
 
                   <button
                     onClick={() => increment(it.cartItemId)}
-                    // UBAH LOGIKA 'disabled' DI BAWAH INI
-                    disabled={it.qty >= it.variantStock} // Gunakan variantStock
+                    disabled={it.qty >= it.variantStock}
                     className={`px-3 py-2 ${
-                      // Tambahkan style disabled jika stok tercapai
                       it.qty >= it.variantStock
                         ? "opacity-50 cursor-not-allowed"
                         : "hover:bg-[#e1eac4]"
@@ -147,7 +142,7 @@ export default function CartDrawer() {
 
               <button
                 onClick={() => {
-                  closeCart(); // Tutup drawer sebelum pindah halaman
+                  closeCart();
                   nav("/checkout");
                 }}
                 className="rounded-xl px-6 py-3 font-medium transition bg-[#3971b8] text-[#fbfcee] hover:opacity-95 active:scale-[.99]"

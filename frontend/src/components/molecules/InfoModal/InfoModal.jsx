@@ -1,18 +1,15 @@
-// ===================================================================
-// 📁 src/components/molecules/InfoModal/InfoModal.jsx
-// ===================================================================
+// src/components/molecules/InfoModal/InfoModal.jsx
 
-// Komponen ikon dinamis
 const ModalIcon = ({ type }) => {
   const styles = {
-    success: "bg-[#e1eac4] text-[#394b2b]", // Hijau
-    error: "bg-red-100 text-red-700", // Merah
-    warning: "bg-yellow-100 text-yellow-800", // Kuning
+    success: "bg-[#e1eac4] text-[#394b2b]",
+    error: "bg-red-100 text-red-700",
+    warning: "bg-yellow-100 text-yellow-800",
   };
   const icons = {
-    success: "✓", // Centang
-    error: "×", // Silang
-    warning: "!", // Seru
+    success: "✓",
+    error: "×",
+    warning: "!",
   };
   return (
     <div
@@ -28,7 +25,7 @@ const ModalIcon = ({ type }) => {
 export default function InfoModal({
   open,
   onClose,
-  type = "warning", // 'success', 'error', 'warning'
+  type = "warning",
   title,
   message,
   buttonText = "OK",

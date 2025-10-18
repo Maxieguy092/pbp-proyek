@@ -6,16 +6,14 @@ export default function ProductCard({
   category,
   price,
   imageUrl,
-  images = [], // ✅ tambahkan default biar aman
+  images = [],
 }) {
   const fallback = "/images/fallback.jpg";
-  const BASE_URL = "http://localhost:5000"; // alamat backend kamu
+  const BASE_URL = "http://localhost:5000";
 
-  // Ambil gambar yang valid: prefer imageUrl, kalau kosong pakai images[0]
   const finalImageUrl =
     (imageUrl && imageUrl.trim() !== "" ? imageUrl : images[0]) || fallback;
 
-  // Tambahkan prefix kalau belum ada http
   const displayImage = finalImageUrl.startsWith("http")
     ? finalImageUrl
     : `${BASE_URL}/${finalImageUrl}`;

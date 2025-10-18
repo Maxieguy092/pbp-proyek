@@ -6,14 +6,13 @@ export default function ProductGridSection({
   id,
   title,
   description,
-  to, // link "View All" (opsional)
-  items = 5, // jumlah dummy kalau gak ada products
-  products, // array produk dari catalog/API
-  limit, // ⬅️ baru: batasi jumlah yang ditampilkan
+  to,
+  items = 5,
+  products,
+  limit,
 }) {
   const cap = Number.isFinite(limit) ? limit : undefined;
 
-  // kalau ada products → pakai itu; kalau nggak ada → bikin dummy
   const baseList =
     products ??
     Array.from({ length: items }).map((_, i) => ({
@@ -24,7 +23,6 @@ export default function ProductGridSection({
       imageUrl: i % 2 === 0 ? "/images/shirt-1.jpg" : "/images/shirt-2.jpg",
     }));
 
-  // terapkan limit kalau diset
   const list = cap ? baseList.slice(0, cap) : baseList;
 
   return (

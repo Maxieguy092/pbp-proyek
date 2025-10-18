@@ -1,6 +1,4 @@
-// ==================================================
-// 📁 src/components/pages/admin/ProductForm.jsx
-// ==================================================
+// src/components/pages/admin/ProductForm.jsx
 import { useNavigate, useParams } from "react-router-dom";
 import AdminLayout from "../../templates/AdminLayout/AdminLayout";
 import ConfirmModal from "../../molecules/ConfirmModal/ConfirmModal";
@@ -37,7 +35,6 @@ export default function ProductForm() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [errors, setErrors] = useState({});
 
-  // 🧠 general input handler
   const set = (k) => (e) => {
     let value = e.target.value;
     if (k === "price") {
@@ -53,14 +50,12 @@ export default function ProductForm() {
     setErrors((err) => ({ ...err, [k]: "" }));
   };
 
-  // 🧩 stock per size
   const setSizeStock = (index, value) => {
     const updated = [...form.sizes];
     updated[index].stock = value === "" ? "" : Math.max(0, Number(value));
     setForm((f) => ({ ...f, sizes: updated }));
   };
 
-  // 📸 image upload
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
     const previews = files.map((file) => ({
@@ -81,7 +76,6 @@ export default function ProductForm() {
     }));
   };
 
-  // 🔹 validation
   const validate = () => {
     const newErrors = {};
     if (!form.name.trim()) newErrors.name = "Product name is required.";
@@ -102,7 +96,6 @@ export default function ProductForm() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // 🔹 save product
   const save = async (e) => {
     e.preventDefault();
     if (!validate()) return;
@@ -119,14 +112,12 @@ export default function ProductForm() {
     nav("/admin/products");
   };
 
-  // 🗑️ delete product
   const del = () => {
     setShowConfirm(false);
     deleteProduct(id);
     nav("/admin/products");
   };
 
-  // 🧹 load existing data
   useEffect(() => {
     if (isEdit && existing.id) {
       setForm({
@@ -358,7 +349,7 @@ export default function ProductForm() {
 
       <ConfirmModal
         open={showConfirm}
-        title="Konfirmasi Penghapusan" // Judul bisa dibuat lebih spesifik
+        title="Konfirmasi Penghapusan"
         message="Apakah anda yakin ingin menghapus produk ini? Aksi ini tidak dapat dibatalkan."
         onCancel={() => setShowConfirm(false)}
         onConfirm={del}

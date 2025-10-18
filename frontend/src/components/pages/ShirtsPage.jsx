@@ -12,7 +12,6 @@ export default function ShirtsPage() {
   useEffect(() => {
     (async () => {
       try {
-        // Panggil API dengan filter kategori "Shirts"
         const data = await fetchProducts({ category: "Shirts" });
         setItems(data);
       } catch (e) {
@@ -28,7 +27,6 @@ export default function ShirtsPage() {
       <div className="mx-auto max-w-7xl px-4 py-10">
         <h1 className="text-2xl font-semibold mb-8">Shirts</h1>
 
-        {/* 3. Tampilkan UI berdasarkan kondisi state */}
         {loading && <p>Loading…</p>}
         {err && <p className="text-red-600">{err}</p>}
 

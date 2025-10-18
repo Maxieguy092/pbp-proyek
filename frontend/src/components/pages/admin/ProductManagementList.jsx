@@ -1,6 +1,4 @@
-// ==================================================
-// 📁 src/components/pages/admin/ProductManagementList.jsx
-// ==================================================
+// src/components/pages/admin/ProductManagementList.jsx
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AdminLayout from "../../templates/AdminLayout/AdminLayout";
@@ -21,10 +19,10 @@ export default function ProductManagementList() {
         if (!res.ok) throw new Error("Not authorized");
 
         const data = await res.json();
-        if (data.role !== "admin"){
+        if (data.role !== "admin") {
           navigate("/");
           return;
-        };
+        }
 
         setAuthorized(true);
       } catch {
@@ -35,7 +33,7 @@ export default function ProductManagementList() {
     }
     verifyAdmin();
   }, [navigate]);
-  
+
   const { products, deleteProduct } = useProducts();
 
   return (
@@ -93,7 +91,6 @@ export default function ProductManagementList() {
                   </td>
                 </tr>
               ))}
-              {/* baris kosong buat vibe mockup */}
               {Array.from({ length: 10 - products.length }).map((_, i) => (
                 <tr key={`empty-${i}`} className="border-b border-[#d3e0a9]">
                   <td className="py-6 px-4">&nbsp;</td>

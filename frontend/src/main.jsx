@@ -3,8 +3,6 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import "./index.css";
-
-// --- Impor semua komponen halaman Anda ---
 import HomePage from "./components/pages/HomePage.jsx";
 import ShirtsPage from "./components/pages/ShirtsPage.jsx";
 import TShirtsPage from "./components/pages/TShirtsPage.jsx";
@@ -15,24 +13,18 @@ import SignupPage from "./components/pages/SignupPage.jsx";
 import SearchPage from "./components/pages/SearchPage.jsx";
 import CheckoutPage from "./components/pages/CheckoutPage.jsx";
 import ProductDetailPage from "./components/pages/ProductDetailPage.jsx";
-
 import DashboardLayout from "./components/templates/DashboardLayout/DashboardLayout.jsx";
 import ProfilePage from "./components/pages/Dashboard/ProfilePage.jsx";
 import OrdersPage from "./components/pages/Dashboard/OrdersPage.jsx";
-// import OrderDetail from "./components/pages/admin/OrderDetail.jsx";
-
 import AdminHome from "./components/pages/admin/AdminHome.jsx";
 import ProductManagementList from "./components/pages/admin/ProductManagementList.jsx";
 import ProductForm from "./components/pages/admin/ProductForm.jsx";
 import OrderManagement from "./components/pages/admin/OrderManagement.jsx";
 import OrderDetail from "./components/pages/admin/OrderDetail.jsx";
-
-// --- Impor semua Provider Anda ---
 import { CartProvider } from "./contexts/CartContext.jsx";
 import { UserProvider } from "./contexts/UserContext.jsx";
 import { ProductProvider } from "./contexts/ProductContext.jsx";
 
-// --- Komponen Error & 404 ---
 function GlobalError() {
   return (
     <div className="min-h-screen flex items-center justify-center p-6 text-center">
@@ -55,7 +47,6 @@ function NotFound() {
   );
 }
 
-// --- Konfigurasi Router (tidak ada perubahan di sini) ---
 const router = createBrowserRouter(
   [
     { path: "/", element: <HomePage /> },
@@ -94,11 +85,6 @@ const router = createBrowserRouter(
   { basename: import.meta.env.BASE_URL || "/" }
 );
 
-// ================================================================
-// BAGIAN YANG DIPERBAIKI
-// ================================================================
-
-// Buat komponen App untuk membungkus semua Provider di satu tempat
 function App() {
   return (
     <UserProvider>
@@ -111,7 +97,6 @@ function App() {
   );
 }
 
-// Render komponen App yang sudah berisi semua Provider
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <App />

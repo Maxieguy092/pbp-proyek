@@ -1,6 +1,4 @@
-// ==================================================
-// 📁 src/components/pages/admin/AdminHome.jsx
-// ==================================================
+//  src/components/pages/admin/AdminHome.jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminLayout from "../../templates/AdminLayout/AdminLayout";
@@ -60,13 +58,12 @@ const IconDone = (props) => (
 export default function AdminHome() {
   const [orders, setOrders] = useState([]);
 
-   useEffect(() => {
-    //  setLoading(true);
-     fetchOrders()
-       .then(setOrders)
-       .catch((err) => console.error(err))
-       .finally(() => setLoading(false));
-   }, []);
+  useEffect(() => {
+    fetchOrders()
+      .then(setOrders)
+      .catch((err) => console.error(err))
+      .finally(() => setLoading(false));
+  }, []);
 
   const totalOrders = orders.length;
   const totalPending = orders.filter((o) => o.status === "Pending").length;
@@ -84,13 +81,13 @@ export default function AdminHome() {
         });
         if (!res.ok) throw new Error();
         const data = await res.json();
-        if (data.role !== "admin"){
+        if (data.role !== "admin") {
           navigate("/");
           return;
-        };
+        }
         setAuthorized(true);
       } catch {
-        navigate("/"); // redirect if not admin
+        navigate("/");
       } finally {
         setChecked(true);
       }

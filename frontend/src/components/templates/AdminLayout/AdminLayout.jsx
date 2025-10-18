@@ -1,6 +1,4 @@
-// ==================================================
-// 📁 src/components/templates/AdminLayout/AdminLayout.jsx
-// ==================================================
+// src/components/templates/AdminLayout/AdminLayout.jsx
 import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import HeaderBar from "../../organisms/HeaderBar/HeaderBar";
@@ -24,14 +22,13 @@ export default function AdminLayout({ children }) {
 
   return (
     <div className="min-h-screen bg-[#fbfcee] text-[#2b2b2b]">
-      {/* Panggil modal dengan props yang sesuai */}
       <ConfirmModal
         open={isModalOpen}
         title="Sign Out"
         message="Apakah anda yakin ingin sign out?"
         onCancel={() => setIsModalOpen(false)}
         onConfirm={handleLogout}
-        confirmText="Sign Out" // Gunakan prop confirmText
+        confirmText="Sign Out"
       />
 
       <HeaderBar />

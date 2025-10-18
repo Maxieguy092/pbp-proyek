@@ -2,7 +2,6 @@ import { useEffect, useState, useMemo } from "react";
 import ProductCard from "../../molecules/ProductCard/ProductCard";
 import { fetchProducts } from "../../../api/products";
 
-// Pindahkan fungsi shuffle ke sini agar komponen ini mandiri
 const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
 
 export default function NewArrivalsRow() {
@@ -13,7 +12,6 @@ export default function NewArrivalsRow() {
   useEffect(() => {
     (async () => {
       try {
-        // Panggil fetchProducts tanpa argumen untuk mengambil SEMUA produk
         const data = await fetchProducts({});
         setItems(data);
       } catch (e) {
@@ -24,7 +22,6 @@ export default function NewArrivalsRow() {
     })();
   }, []);
 
-  // Acak dan potong data HANYA saat 'items' berubah
   const arrivals = useMemo(() => shuffle(items).slice(0, 5), [items]);
 
   return (

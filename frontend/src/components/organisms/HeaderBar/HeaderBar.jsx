@@ -64,8 +64,8 @@ export default function HeaderBar() {
 
   const dashboardPath = user
     ? user.role === "admin"
-      ? "/admin/dashboard" // Jika admin
-      : "/dashboard/profile" // Jika pengguna biasa
+      ? "/admin/dashboard"
+      : "/dashboard/profile"
     : "/login";
 
   return (
@@ -76,7 +76,7 @@ export default function HeaderBar() {
             to="/"
             className="text-xl sm:text-2xl font-bold tracking-wide select-none"
           >
-            Kelompok 1
+            Kelompok 1's Mini-Commerce
           </Link>
           <div className="flex items-center gap-4">
             <button
@@ -87,14 +87,14 @@ export default function HeaderBar() {
               <IconSearch />
             </button>
 
-            {/* 👉 CART membuka drawer */}
+            {/* CART membuka drawer */}
             <button
               aria-label={`Keranjang dengan ${count} item`}
               onClick={openCart}
               className="p-2 rounded-xl hover:bg-[#e1eac4] transition relative"
             >
               <IconCart />
-              {/* Bonus: Tampilkan jumlah item di keranjang */}
+              {/* Tampilkan jumlah item di keranjang */}
               {count > 0 && (
                 <span className="absolute -top-1 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-[#fbfcee] text-xs text-[#3971b8]">
                   {count}

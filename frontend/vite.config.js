@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
-      "/api": "http://localhost:5000", // forward API calls to Go backend
+      "/api": "http://localhost:5000",
     },
   },
 });

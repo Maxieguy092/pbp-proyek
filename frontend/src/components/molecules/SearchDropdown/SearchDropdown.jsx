@@ -8,7 +8,6 @@ export default function SearchDropdown({ open, onClose }) {
 
   useEffect(() => {
     if (open) {
-      // auto-focus ketika dibuka
       setTimeout(() => inputRef.current?.focus(), 0);
       const onKey = (e) => e.key === "Escape" && onClose();
       window.addEventListener("keydown", onKey);

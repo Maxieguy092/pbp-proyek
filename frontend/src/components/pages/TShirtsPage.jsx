@@ -1,6 +1,4 @@
-// ==================================================
-// 📁 File: src/components/pages/TShirtsPage.jsx
-// ==================================================
+// src/components/pages/TShirtsPage.jsx
 import { useEffect, useState } from "react";
 import MainLayout from "../templates/MainLayout/MainLayout";
 import ProductCard from "../molecules/ProductCard/ProductCard";

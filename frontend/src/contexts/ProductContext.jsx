@@ -1,4 +1,4 @@
-// 📁 src/contexts/ProductContext.jsx
+// src/contexts/ProductContext.jsx
 import { createContext, useContext, useEffect, useState } from "react";
 
 const ProductContext = createContext();
@@ -23,14 +23,14 @@ export function ProductProvider({ children }) {
     fetchProducts();
   }, []);
 
-
-
-  // di ProductContext.jsx
   const addProduct = async (newProduct) => {
     try {
       const formData = new FormData();
       formData.append("name", newProduct.name);
-      formData.append("category_id", newProduct.category_id || newProduct.category);
+      formData.append(
+        "category_id",
+        newProduct.category_id || newProduct.category
+      );
       formData.append("price", newProduct.price);
       formData.append("stock", newProduct.stock);
       formData.append("description", newProduct.description);
@@ -43,7 +43,6 @@ export function ProductProvider({ children }) {
         formData.append("sizes", JSON.stringify(formattedSizes));
       }
 
-      // Tambahkan file gambar (maksimal 4)
       newProduct.images.forEach((img) => {
         if (img.file) {
           formData.append("images", img.file);
@@ -52,7 +51,7 @@ export function ProductProvider({ children }) {
 
       const res = await fetch("http://localhost:5000/api/admin/products", {
         method: "POST",
-        body: formData, 
+        body: formData,
         credentials: "include",
       });
 
@@ -63,12 +62,14 @@ export function ProductProvider({ children }) {
     }
   };
 
-
   const updateProduct = async (id, updatedProduct) => {
     try {
       const formData = new FormData();
       formData.append("name", updatedProduct.name);
-      formData.append("category_id", updatedProduct.category_id || updatedProduct.category);
+      formData.append(
+        "category_id",
+        updatedProduct.category_id || updatedProduct.category
+      );
       formData.append("price", updatedProduct.price);
       formData.append("stock", updatedProduct.stock);
       formData.append("description", updatedProduct.description);
@@ -84,15 +85,18 @@ export function ProductProvider({ children }) {
         if (img.file) {
           formData.append("images", img.file);
         } else if (img.url) {
-          formData.append("existingImages", img.url); // biar backend tahu mana gambar lama
+          formData.append("existingImages", img.url);
         }
       });
 
-      const res = await fetch(`http://localhost:5000/api/admin/products/${id}`, {
-        method: "PUT",
-        body: formData,
-        credentials: "include",
-      });
+      const res = await fetch(
+        `http://localhost:5000/api/admin/products/${id}`,
+        {
+          method: "PUT",
+          body: formData,
+          credentials: "include",
+        }
+      );
 
       if (!res.ok) {
         const err = await res.json();
@@ -109,27 +113,24 @@ export function ProductProvider({ children }) {
     }
   };
 
-
-
-  // 🔹 Hapus produk (DELETE ke backend)
   const deleteProduct = async (id) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/products/${id}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
+      const res = await fetch(
+        `http://localhost:5000/api/admin/products/${id}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        }
+      );
       if (!res.ok) throw new Error("Gagal menghapus produk");
 
-      // Setelah delete berhasil → re-fetch semua produk biar list UI update otomatis
       const refreshed = await fetch("http://localhost:5000/api/products");
       const updatedList = await refreshed.json();
       setProducts(updatedList);
-
     } catch (err) {
       console.error(err);
     }
   };
-
 
   return (
     <ProductContext.Provider

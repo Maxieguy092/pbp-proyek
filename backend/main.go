@@ -10,12 +10,11 @@ import (
 )
 
 func main() {
-    db.InitDB() // cukup panggil aja, jangan ditampung ke err
+    db.InitDB()  
 
     r := gin.Default()
     
 
-    // Serve dua path, /images dan /api/images
     r.Static("/images", "./images")
     r.Static("/api/images", "./images")
     

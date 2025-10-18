@@ -1,6 +1,4 @@
-// ==================================================
-// 📁 src/components/templates/DashboardLayout/DashboardLayout.jsx
-// ==================================================
+// src/components/templates/DashboardLayout/DashboardLayout.jsx
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import MainLayout from "../MainLayout/MainLayout";
@@ -35,14 +33,13 @@ export default function DashboardLayout() {
 
   return (
     <MainLayout>
-      {/* Panggil modal dengan props yang sesuai */}
       <ConfirmModal
         open={isModalOpen}
         title="Sign Out"
         message="Apakah anda yakin ingin sign out?"
         onCancel={() => setIsModalOpen(false)}
         onConfirm={handleLogout}
-        confirmText="Sign Out" // Gunakan prop confirmText
+        confirmText="Sign Out"
       />
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">

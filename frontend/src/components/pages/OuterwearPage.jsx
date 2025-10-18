@@ -12,7 +12,6 @@ export default function OuterwearPage() {
   useEffect(() => {
     (async () => {
       try {
-        // Meminta data dengan kategori "Outerwear"
         const data = await fetchProducts({ category: "Outerwear" });
         setItems(data);
       } catch (e) {

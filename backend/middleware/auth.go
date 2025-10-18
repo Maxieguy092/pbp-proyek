@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	db "github.com/Maxiegame092/pbp-app/DB"
-	"github.com/Maxiegame092/pbp-app/controllers" // Impor controllers untuk akses `sessions`
+	"github.com/Maxiegame092/pbp-app/controllers"
 	"github.com/gin-gonic/gin"
 )
 
@@ -16,7 +16,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		email, exists := controllers.Sessions[cookie] // Akses map sessions dari package controllers
+		email, exists := controllers.Sessions[cookie] 
 		if !exists {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid session"})
 			return
@@ -26,14 +26,12 @@ func AuthMiddleware() gin.HandlerFunc {
 		query := "SELECT id FROM users WHERE email = ?"
 		err = db.DB.QueryRow(query, email).Scan(&userID)
 		if err != nil {
-			// Jika email tidak ditemukan di database, sesi dianggap tidak valid
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized: User not found for this session"})
 			return
 		}
 
 		c.Set("user_id", userID)
 
-		// Lanjutkan ke handler/controller selanjutnya
 		c.Next()
 	}
 }

@@ -29,16 +29,11 @@ export function CartProvider({ children }) {
       setLoading(true);
       getCart()
         .then((data) => {
-          // =======================================================
-          // TAMBAHKAN BARIS INI UNTUK DEBUGGING
           console.log("Data keranjang diterima dari backend:", data);
-          // =======================================================
 
-          // Pastikan data yang di-set adalah array
           if (Array.isArray(data)) {
             setItems(data);
           } else {
-            // Jika bukan array, set ke array kosong untuk mencegah crash
             console.error("Data keranjang bukan array!", data);
             setItems([]);
           }
@@ -61,27 +56,20 @@ export function CartProvider({ children }) {
       return alert("Silakan login untuk menambahkan item ke keranjang.");
     }
 
-    // LANGKAH 1: Cari tahu apakah produk sudah ada di keranjang.
-    // Kita cek berdasarkan ID produk dan varian (size).
     const existingItem = items.find(
       (item) => item.id === product.id && item.variant === variant
     );
     const qtyInCart = existingItem ? existingItem.qty : 0;
 
-    // LANGKAH 2: Cek apakah total kuantitas akan melebihi stok.
-    // product.stock didapat dari object product yang dikirim dari ProductDetailPage
     if (qtyInCart + qty > product.stock) {
       return alert(
         `Tidak bisa menambahkan melebihi stok. Anda sudah punya ${qtyInCart} di keranjang, dan stok produk ini hanya ${product.stock}.`
       );
     }
 
-    // LANGKAH 3: Jika aman, baru kirim request ke backend.
     try {
       const updatedCart = await addItemToCart(product.id, qty, variant);
       setItems(updatedCart);
-      // Beri notifikasi sukses jika perlu
-      // alert(`${qty} ${product.name} ditambahkan ke keranjang.`);
     } catch (error) {
       alert(error.message);
     }

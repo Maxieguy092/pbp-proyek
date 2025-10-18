@@ -1,6 +1,4 @@
-// ==================================================
-// 📁 File: src/components/pages/ProductDetailPage.jsx
-// ==================================================
+// File: src/components/pages/ProductDetailPage.jsx
 import { useParams, Link } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import MainLayout from "../templates/MainLayout/MainLayout";
@@ -10,7 +8,6 @@ import { useUser } from "../../contexts/UserContext";
 import LoginPromptModal from "../molecules/LoginPromptModal/LoginPromptModal";
 import AddToCartSuccessModal from "../molecules/AddToCartSuccessModal/AddToCartSuccessModal";
 
-// Formatter IDR
 const formatIDR = (n) =>
   new Intl.NumberFormat("id-ID", {
     style: "currency",
@@ -23,21 +20,18 @@ const FALLBACK_IMG = "/images/fallback.jpg";
 export default function ProductDetailPage() {
   const { id } = useParams();
   const { add, openCart } = useCart();
-  const { user, loading: userLoading } = useUser(); // Ambil status user
-  const [showLoginModal, setShowLoginModal] = useState(false); // State untuk modal
+  const { user, loading: userLoading } = useUser();
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [addedProductInfo, setAddedProductInfo] = useState(null); // Untuk menyimpan info produk
+  const [addedProductInfo, setAddedProductInfo] = useState(null);
 
-  // --- data state ---
   const [loading, setLoading] = useState(true);
   const [product, setProduct] = useState(null);
 
-  // --- ui state ---
   const [qty, setQty] = useState(1);
   const [size, setSize] = useState(null);
 
-  // fetch product dari backend
   useEffect(() => {
     let alive = true;
     setLoading(true);
@@ -46,13 +40,12 @@ export default function ProductDetailPage() {
         if (!alive) return;
         setProduct(p);
 
-        // ✅ Pilih otomatis size pertama yang stoknya masih tersedia
         const availableSize = Array.isArray(p?.sizes)
           ? p.sizes.find((s) => s.stock > 0)?.size || null
           : null;
 
-          setSize(availableSize);
-        })
+        setSize(availableSize);
+      })
       .catch(() => {
         if (!alive) return;
         setProduct(null);
@@ -63,7 +56,6 @@ export default function ProductDetailPage() {
     };
   }, [id]);
 
-  // guard
   if (loading) {
     return (
       <MainLayout>
@@ -90,8 +82,6 @@ export default function ProductDetailPage() {
     );
   }
 
-  // stok & kondisi
-  // stok & kondisi
   const selectedSizeStock = Array.isArray(product.sizes)
     ? product.sizes.find((s) => s.size === size)?.stock ?? 0
     : product.stock;
@@ -99,8 +89,6 @@ export default function ProductDetailPage() {
   const maxQty = Number.isFinite(selectedSizeStock) ? selectedSizeStock : 10;
   const outOfStock = maxQty <= 0;
 
-
-  // galeri gambar: pakai images[] kalo ada, fallback ke imageUrl
   const gallery = product.images?.length
     ? product.images
     : [product.imageUrl].filter(Boolean);
@@ -123,20 +111,15 @@ export default function ProductDetailPage() {
       return;
     }
 
-    // Panggil fungsi 'add' dari context
     add(product, qty, size);
 
-    // Hapus alert lama
-    // alert("Ditambahkan ke keranjang (demo)");
-
-    // Simpan info produk dan kuantitas, lalu tampilkan modal sukses
     setAddedProductInfo({ ...product, qty });
     setShowSuccessModal(true);
   };
 
   const onViewCartClick = () => {
-    setShowSuccessModal(false); // Tutup modal sukses
-    openCart(); // Buka cart drawer
+    setShowSuccessModal(false);
+    openCart();
   };
 
   return (
@@ -149,7 +132,7 @@ export default function ProductDetailPage() {
       <AddToCartSuccessModal
         open={showSuccessModal}
         onClose={() => setShowSuccessModal(false)}
-        onViewCart={onViewCartClick} // Teruskan handler baru ke props
+        onViewCart={onViewCartClick}
         product={addedProductInfo}
         qty={addedProductInfo?.qty}
       />
@@ -187,45 +170,43 @@ export default function ProductDetailPage() {
 
             {/* Size (opsional) */}
             {Array.isArray(product.sizes) && product.sizes.length > 0 && (
-            <div className="mt-6">
-              <p className="text-sm text-[#2b2b2b] mb-2">Size</p>
-              <div className="flex gap-2 flex-wrap">
-                {product.sizes.map((sObj) => (
-                  <button
-                    key={sObj.size}
-                    onClick={() => {
-                      setSize(sObj.size);
-                      setQty(1); // reset qty ke 1 setiap kali ganti ukuran
-                    }}
-                    className={`px-3 py-2 rounded-lg border ${
-                      size === sObj.size
-                        ? "bg-[#e1eac4] border-[#c8d69b]"
-                        : "border-[#d3e0a9]"
-                    }`}
-                  >
-                    {sObj.size}
-                  </button>
-                ))}
+              <div className="mt-6">
+                <p className="text-sm text-[#2b2b2b] mb-2">Size</p>
+                <div className="flex gap-2 flex-wrap">
+                  {product.sizes.map((sObj) => (
+                    <button
+                      key={sObj.size}
+                      onClick={() => {
+                        setSize(sObj.size);
+                        setQty(1);
+                      }}
+                      className={`px-3 py-2 rounded-lg border ${
+                        size === sObj.size
+                          ? "bg-[#e1eac4] border-[#c8d69b]"
+                          : "border-[#d3e0a9]"
+                      }`}
+                    >
+                      {sObj.size}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-
+            )}
 
             {/* Stok berdasarkan size */}
-          {Array.isArray(product.sizes) && product.sizes.length > 0 ? (
-            <p className="mt-6 italic font-semibold text-sm text-gray-600">
-              {size
-                ? `Stok: ${
-                    product.sizes.find((s) => s.size === size)?.stock ?? 0
-                  }`
-                : "Pilih ukuran terlebih dahulu."}
-            </p>
-          ) : (
-            <p className="mt-6 italic font-semibold text-sm text-gray-600">
-              {outOfStock ? "Stok habis" : `Stok: ${product.stock}`}
-            </p>
-          )}
-
+            {Array.isArray(product.sizes) && product.sizes.length > 0 ? (
+              <p className="mt-6 italic font-semibold text-sm text-gray-600">
+                {size
+                  ? `Stok: ${
+                      product.sizes.find((s) => s.size === size)?.stock ?? 0
+                    }`
+                  : "Pilih ukuran terlebih dahulu."}
+              </p>
+            ) : (
+              <p className="mt-6 italic font-semibold text-sm text-gray-600">
+                {outOfStock ? "Stok habis" : `Stok: ${product.stock}`}
+              </p>
+            )}
 
             {/* Qty */}
             <div className="mt-2 inline-flex items-center border border-[#d3e0a9] rounded-lg overflow-hidden">

@@ -7,7 +7,7 @@ import Button from "../atoms/Button/Button";
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { setUser } = useUser(); // Ambil fungsi setUser dari context
+  const { setUser } = useUser();
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -19,7 +19,7 @@ export default function LoginPage() {
 
     const formData = new FormData(e.target);
     const credentials = {
-      username: formData.get("email"), // Backend mengharapkan 'username'
+      username: formData.get("email"),
       password: formData.get("password"),
     };
 
@@ -36,14 +36,11 @@ export default function LoginPage() {
         throw new Error(data.error || "Login failed");
       }
 
-      // PENTING: Simpan objek user ke state global melalui context
       setUser(data.user);
 
       if (data.user.role === "admin") {
-        // Jika admin, arahkan ke dasbor admin
         navigate("/admin/dashboard");
       } else {
-        // Jika bukan, arahkan ke profil pengguna biasa
         navigate("/dashboard/profile");
       }
     } catch (err) {

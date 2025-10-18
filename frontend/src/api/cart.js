@@ -6,7 +6,7 @@ export async function getCart() {
     credentials: "include",
   });
   if (!response.ok) {
-    if (response.status === 401) return []; // Jika belum login, kembalikan array kosong
+    if (response.status === 401) return [];
     throw new Error("Gagal mengambil data keranjang");
   }
   return response.json();

@@ -1,4 +1,4 @@
-// 📁 src/components/pages/CheckoutPage.jsx
+// src/components/pages/CheckoutPage.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "../templates/MainLayout/MainLayout";
@@ -28,7 +28,6 @@ export default function CheckoutPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Fungsi untuk menutup modal (bisa digunakan ulang)
   const closeModal = () => setModalState((prev) => ({ ...prev, open: false }));
 
   const [modalState, setModalState] = useState({
@@ -36,7 +35,7 @@ export default function CheckoutPage() {
     type: "warning",
     title: "",
     message: "",
-    onClose: closeModal, // Gunakan fungsi closeModal sebagai default
+    onClose: closeModal,
   });
 
   const handleChange = (e) => {
@@ -45,7 +44,6 @@ export default function CheckoutPage() {
   };
 
   const handleSubmit = async () => {
-    // Validasi sekarang akan menggunakan closeModal yang benar
     if (items.length === 0) {
       setModalState({
         open: true,
@@ -125,9 +123,6 @@ export default function CheckoutPage() {
     try {
       const result = await createOrder(orderPayload);
 
-      // =======================================================
-      // PERBAIKAN #2: Ubah onClose untuk modal sukses
-      // =======================================================
       setModalState({
         open: true,
         type: "success",
@@ -135,11 +130,10 @@ export default function CheckoutPage() {
         message: `Terima kasih! ID Pesanan Anda adalah #${result.orderId}.`,
         onClose: () => {
           clearCart();
-          navigate("/dashboard/orders"); // <-- Arahkan ke halaman riwayat pesanan
+          navigate("/dashboard/orders");
         },
       });
     } catch (error) {
-      // Pastikan modal error juga menggunakan closeModal yang benar
       setModalState({
         open: true,
         type: "error",
@@ -163,7 +157,6 @@ export default function CheckoutPage() {
       />
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-        {/* ... sisa JSX dari CheckoutPage tidak berubah ... */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
           {/* ... Order Summary ... */}
           <div className="space-y-6">

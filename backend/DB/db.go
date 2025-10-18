@@ -26,7 +26,6 @@ func InitDB() {
 
 	var err error
 
-	// Retry up to 10 times (30s total)
 	for i := 0; i < 10; i++ {
 		DB, err = sql.Open("mysql", dsn)
 		if err == nil {

@@ -12,7 +12,6 @@ export default function PantsPage() {
   useEffect(() => {
     (async () => {
       try {
-        // Satu-satunya perbedaan: kita minta kategori "Pants"
         const data = await fetchProducts({ category: "Pants" });
         setItems(data);
       } catch (e) {

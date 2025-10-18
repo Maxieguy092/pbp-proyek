@@ -4,7 +4,6 @@ import MainLayout from "../templates/MainLayout/MainLayout";
 import ProductCard from "../molecules/ProductCard/ProductCard";
 import { fetchProducts } from "../../api/products";
 
-// normalizer simpel buat pencarian case-insensitive
 const norm = (s) => (s || "").toString().toLowerCase().trim();
 
 export default function SearchPage() {
@@ -15,11 +14,10 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Ambil semua produk dari backend saat halaman dimuat
   useEffect(() => {
     const getProducts = async () => {
       try {
-        const data = await fetchProducts(); // panggil API backend
+        const data = await fetchProducts();
         setAllProducts(data);
       } catch (err) {
         setError(err.message);
@@ -30,7 +28,6 @@ export default function SearchPage() {
     getProducts();
   }, []);
 
-  // Filter produk sesuai query pencarian
   const filtered = useMemo(() => {
     if (!q) return [];
     const term = norm(q);

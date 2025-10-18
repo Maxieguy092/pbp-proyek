@@ -1,19 +1,19 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom"; // Impor useNavigate
+import { Link, useNavigate } from "react-router-dom";
 import MainLayout from "../templates/MainLayout/MainLayout";
 import Button from "../atoms/Button/Button";
-import { registerUser } from "../../api/auth"; // Impor fungsi API
+import { registerUser } from "../../api/auth";
 
 export default function SignupPage() {
   const [pw, setPw] = useState("");
   const [cpw, setCpw] = useState("");
   const [err, setErr] = useState("");
-  const [loading, setLoading] = useState(false); // State untuk loading
-  const navigate = useNavigate(); // Hook untuk navigasi
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    setErr(""); // Reset error setiap kali submit
+    setErr("");
 
     if (pw !== cpw) {
       setErr("Passwords do not match");
@@ -22,7 +22,6 @@ export default function SignupPage() {
 
     setLoading(true);
 
-    // Ambil semua data dari form
     const formData = new FormData(e.target);
     const userData = {
       firstName: formData.get("firstName"),
@@ -33,10 +32,8 @@ export default function SignupPage() {
 
     try {
       await registerUser(userData);
-      // Jika sukses, arahkan ke halaman login
       navigate("/login?status=registered");
     } catch (error) {
-      // Tangkap error dari API dan tampilkan
       setErr(error.message);
     } finally {
       setLoading(false);

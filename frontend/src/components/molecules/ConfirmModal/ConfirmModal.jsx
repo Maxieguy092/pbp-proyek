@@ -1,14 +1,12 @@
-// ==================================================
-// 📁 src/components/molecules/ConfirmModal/ConfirmModal.jsx
-// ==================================================
+// src/components/molecules/ConfirmModal/ConfirmModal.jsx
 export default function ConfirmModal({
   open,
   title = "Are you sure?",
   message,
   onCancel,
   onConfirm,
-  confirmText = "Delete", // Prop baru dengan nilai default "Delete"
-  cancelText = "Cancel", // Prop baru dengan nilai default "Cancel"
+  confirmText = "Delete",
+  cancelText = "Cancel",
 }) {
   if (!open) return null;
   return (

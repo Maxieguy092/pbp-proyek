@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"database/sql"
-	"encoding/json" // Impor package JSON
+	"encoding/json"
 	"net/http"
 	"sort"
 	"strings"
@@ -12,7 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Struct ini akan kita gunakan sebagai format respons untuk daftar pesanan pengguna.
 type UserOrderItem struct {
 	Name     string  `json:"name"`
 	ImageURL string  `json:"imageUrl"`
@@ -35,9 +34,7 @@ type UserOrderDetail struct {
 	AddressText    string          `json:"addressText"`
 }
 
-// GetUserOrders: Mengambil riwayat pesanan untuk user yang sedang login.
 func GetUserOrders(c *gin.Context) {
-	// 1. Ambil userID dari sesi (tidak ada perubahan)
 	userIDInterface, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
@@ -45,7 +42,6 @@ func GetUserOrders(c *gin.Context) {
 	}
 	userID, _ := userIDInterface.(int)
 
-	// 2. Query diubah untuk mengambil "oi.variant"
 	query := `
 		SELECT 
 			o.id, o.created_at, o.status, o.total, 
@@ -65,7 +61,6 @@ func GetUserOrders(c *gin.Context) {
 	}
 	defer rows.Close()
 
-	// 3. Proses hasil query
 	ordersMap := make(map[int]*UserOrderDetail)
 	for rows.Next() {
 		var orderID int
@@ -73,9 +68,8 @@ func GetUserOrders(c *gin.Context) {
 		var status, shippingName, shippingEmail, paymentOption, productName, productImageUrl, addressText, shippingPhone, paymentDetails string
 		var total, productPrice float64
 		var productQty int
-		var productVariant sql.NullString // Variabel untuk menampung variant dari DB
+		var productVariant sql.NullString 
 
-		// 4. Sesuaikan Scan untuk membaca kolom variant
 		err := rows.Scan(
 			&orderID, &createdAt, &status, &total,
 			&shippingName, &shippingEmail, &paymentOption,
@@ -83,10 +77,9 @@ func GetUserOrders(c *gin.Context) {
 			&productQty, &productName, &productImageUrl, &productPrice, &productVariant,
 		)
 		if err != nil {
-			continue // Lewati baris yang error
+			continue  
 		}
 
-		// Buat entri order baru jika belum ada di map
 		if _, ok := ordersMap[orderID]; !ok {
 			ordersMap[orderID] = &UserOrderDetail{
 				ID:             orderID,
@@ -103,7 +96,6 @@ func GetUserOrders(c *gin.Context) {
 			}
 		}
 
-		// 5. Buat objek item dan tambahkan variant jika ada
 		orderItem := UserOrderItem{
 			Name:     productName,
 			ImageURL: productImageUrl,
@@ -111,20 +103,18 @@ func GetUserOrders(c *gin.Context) {
 			Price:    productPrice,
 		}
 		if productVariant.Valid {
-			// Jika variant tidak null di DB, assign nilainya
 			orderItem.Variant = &productVariant.String
 		}
 		ordersMap[orderID].Items = append(ordersMap[orderID].Items, orderItem)
 	}
 
-	// 6. Konversi map ke slice untuk respons JSON (tidak ada perubahan)
 	ordersList := make([]UserOrderDetail, 0, len(ordersMap))
 	ids := make([]int, 0, len(ordersMap))
 	for id := range ordersMap {
 		ids = append(ids, id)
 	}
 	sort.Slice(ids, func(i, j int) bool {
-		return ids[i] > ids[j] // Urutkan dari ID terbesar (terbaru)
+		return ids[i] > ids[j]  
 	})
 
 	for _, id := range ids {
@@ -134,33 +124,27 @@ func GetUserOrders(c *gin.Context) {
 	c.JSON(http.StatusOK, ordersList)
 }
 
-// Struct untuk daftar pesanan di halaman OrderManagement
-// (Tidak ada perubahan di sini)
 type OrderListItem struct {
 	ID       int     `json:"id"`
 	Customer string  `json:"customer"`
 	Total    float64 `json:"total"`
-	Address  string  `json:"address"` // Hanya alamat singkat
+	Address  string  `json:"address"`  
 	Status   string  `json:"status"`
 	Date     string  `json:"date"`
 }
 
-// Struct untuk item di halaman OrderDetail
-// (Tidak ada perubahan di sini)
 type OrderItemDetail struct {
 	Product string  `json:"product"`
 	Qty     int     `json:"qty"`
 	Price   float64 `json:"price"`
 }
 
-// Struct untuk detail lengkap pesanan
-// DIUBAH: Menambahkan field baru untuk informasi pengiriman dan pembayaran
 type OrderDetailResponse struct {
 	ID             int               `json:"id"`
 	Date           string            `json:"date"`
 	CustomerName   string            `json:"name"`
 	CustomerEmail  string            `json:"email"`
-	Address        string            `json:"address"` // Ini akan menjadi string JSON
+	Address        string            `json:"address"`  
 	Status         string            `json:"status"`
 	Items          []OrderItemDetail `json:"items"`
 	Total          float64           `json:"total"`
@@ -173,20 +157,16 @@ type OrderDetailResponse struct {
 }
 
 type CreateOrderRequest struct {
-	// Informasi Pengiriman & Kontak
 	ShippingName   string `json:"shippingName"`
 	ShippingEmail  string `json:"shippingEmail"`
 	ShippingPhone  string `json:"shippingPhone"`
 	ShippingOption string `json:"shippingOption"`
 	
-	// Informasi Pembayaran
 	PaymentOption  string `json:"paymentOption"`
 	PaymentDetails string `json:"paymentDetails"`
 
-	// Alamat lengkap dalam format JSON string
 	AddressText    string `json:"addressText"`
 
-	// Detail item dari keranjang
 	Items []struct {
 		ID    int     `json:"id"`
 		Qty   int     `json:"qty"`
@@ -194,13 +174,11 @@ type CreateOrderRequest struct {
 		Variant string  `json:"variant"`
 	} `json:"items"`
 
-	// Total harga
 	Total float64 `json:"total"`
 }
 
 
 func CreateOrder(c *gin.Context) {
-	// Ambil userID dari middleware
 	userIDInterface, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
@@ -219,7 +197,6 @@ func CreateOrder(c *gin.Context) {
 		return
 	}
 
-	// (Validasi lainnya tetap sama)
 	if strings.TrimSpace(req.ShippingName) == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Shipping name is required"})
 		return
@@ -237,14 +214,12 @@ func CreateOrder(c *gin.Context) {
 		return
 	}
 
-	// Memulai transaksi database
 	tx, err := db.DB.Begin()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start transaction"})
 		return
 	}
 
-	// 1. INSERT ke tabel 'orders' (Sama seperti sebelumnya)
 	queryOrder := `
 		INSERT INTO orders 
 		(user_id, total, shipping_name, shipping_email, shipping_phone, status, shipping_option, payment_option, payment_details, address_text)
@@ -259,11 +234,7 @@ func CreateOrder(c *gin.Context) {
 
 	orderID, _ := res.LastInsertId()
 
-	// =========================================================================
-	// BLOK BARU: LOGIKA PENGURANGAN STOK
-	// =========================================================================
 	for _, item := range req.Items {
-		// Langkah A: Ambil data stok saat ini dari DB dan kunci barisnya agar tidak diubah oleh transaksi lain
 		var currentSizesJSON string
 		var currentTotalStock int
 		err := tx.QueryRow("SELECT sizes, stock FROM products WHERE id = ? FOR UPDATE", item.ID).Scan(&currentSizesJSON, &currentTotalStock)
@@ -273,7 +244,6 @@ func CreateOrder(c *gin.Context) {
 			return
 		}
 
-		// Langkah B: Unmarshal JSON sizes menjadi slice of struct
 		var sizes []SizeOption
 		if err := json.Unmarshal([]byte(currentSizesJSON), &sizes); err != nil {
 			tx.Rollback()
@@ -281,22 +251,18 @@ func CreateOrder(c *gin.Context) {
 			return
 		}
 
-		// Langkah C: Cari varian yang cocok, cek stok, dan kurangi
 		variantFound := false
 		newTotalStock := 0
 		for i := range sizes {
 			if sizes[i].Size == item.Variant {
 				variantFound = true
 				if sizes[i].Stock < item.Qty {
-					// Jika stok tidak cukup, batalkan semua transaksi
 					tx.Rollback()
 					c.JSON(http.StatusBadRequest, gin.H{"error": "Insufficient stock for product variant " + item.Variant})
 					return
 				}
-				// Kurangi stok untuk varian ini
 				sizes[i].Stock -= item.Qty
 			}
-			// Hitung ulang total stok dari semua varian
 			newTotalStock += sizes[i].Stock
 		}
 
@@ -306,7 +272,6 @@ func CreateOrder(c *gin.Context) {
 			return
 		}
 
-		// Langkah D: Marshal kembali slice yang sudah diupdate ke JSON
 		updatedSizesJSON, err := json.Marshal(sizes)
 		if err != nil {
 			tx.Rollback()
@@ -314,7 +279,6 @@ func CreateOrder(c *gin.Context) {
 			return
 		}
 
-		// Langkah E: Update data stok di tabel products
 		_, err = tx.Exec("UPDATE products SET sizes = ?, stock = ? WHERE id = ?", string(updatedSizesJSON), newTotalStock, item.ID)
 		if err != nil {
 			tx.Rollback()
@@ -322,14 +286,12 @@ func CreateOrder(c *gin.Context) {
 			return
 		}
 
-		// Langkah F: Masukkan item ke order_items (setelah stok dipastikan aman)
 		queryItem := `
 			INSERT INTO order_items (order_id, product_id, price, qty, variant, subtotal)
 			VALUES (?, ?, ?, ?, ?, ?)
 		`
 		subtotal := item.Price * float64(item.Qty)
         
-        // UBAH EKSEKUSI QUERY DI BAWAH INI
 		_, err = tx.Exec(queryItem, orderID, item.ID, item.Price, item.Qty, item.Variant, subtotal)
 		
         if err != nil {
@@ -338,14 +300,7 @@ func CreateOrder(c *gin.Context) {
 			return
 		}
 	}
-	// =========================================================================
-	// AKHIR BLOK PENGURANGAN STOK
-	// =========================================================================
 
-	// (Opsional) Kosongkan keranjang (Sama seperti sebelumnya)
-	// tx.Exec("DELETE FROM cart_items WHERE ...")
-
-	// Jika semua berhasil, commit transaksi
 	if err := tx.Commit(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to commit transaction"})
 		return
@@ -357,8 +312,6 @@ func CreateOrder(c *gin.Context) {
 	})
 }
 
-// GetOrders: Mengambil semua pesanan untuk OrderManagement
-// (Tidak ada perubahan di sini)
 func GetOrders(c *gin.Context) {
 	query := `
 		SELECT 
@@ -399,13 +352,10 @@ func GetOrders(c *gin.Context) {
 	c.JSON(http.StatusOK, orders)
 }
 
-// GetOrderByID: Mengambil detail satu pesanan
-// DIUBAH: Query dan Scan disesuaikan untuk mengambil data baru
 func GetOrderByID(c *gin.Context) {
 	id := c.Param("id")
 	var order OrderDetailResponse
 
-	// Query untuk data utama pesanan, sudah ditambahkan kolom baru
 	queryOrder := `
 		SELECT 
 			o.id,
@@ -425,7 +375,6 @@ func GetOrderByID(c *gin.Context) {
 		JOIN users u ON o.user_id = u.id
 		WHERE o.id = ?
 	`
-	// Sesuaikan urutan Scan dengan urutan SELECT di query
 	err := db.DB.QueryRow(queryOrder, id).Scan(
 		&order.ID,
 		&order.Date,
@@ -446,7 +395,6 @@ func GetOrderByID(c *gin.Context) {
 		return
 	}
 
-	// Query untuk item-item dalam pesanan (tidak ada perubahan di sini)
 	queryItems := `
 		SELECT p.name, oi.qty, oi.price
 		FROM order_items oi
@@ -464,8 +412,6 @@ func GetOrderByID(c *gin.Context) {
 	c.JSON(http.StatusOK, order)
 }
 
-// UpdateOrderStatus: Mengubah status pesanan
-// (Tidak ada perubahan di sini)
 func UpdateOrderStatus(c *gin.Context) {
 	id := c.Param("id")
 	var body struct {

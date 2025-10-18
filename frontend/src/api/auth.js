@@ -1,4 +1,4 @@
-const API_BASE_PATH = import.meta.env.VITE_API_URL; // "/api"
+const API_BASE_PATH = import.meta.env.VITE_API_URL;
 
 export async function registerUser(userData) {
   const response = await fetch(`${API_BASE_PATH}/register`, {
@@ -12,7 +12,6 @@ export async function registerUser(userData) {
   const data = await response.json();
 
   if (!response.ok) {
-    // Lemparkan error dengan pesan dari backend
     throw new Error(data.error || "Failed to register");
   }
 

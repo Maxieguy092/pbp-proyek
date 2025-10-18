@@ -1,6 +1,4 @@
-// ===================================================================
-// 📁 src/components/molecules/AddToCartSuccessModal/AddToCartSuccessModal.jsx
-// ===================================================================
+// src/components/molecules/AddToCartSuccessModal/AddToCartSuccessModal.jsx
 import { Link } from "react-router-dom";
 import { formatIDR } from "../../../contexts/CartContext";
 
@@ -11,7 +9,6 @@ export default function AddToCartSuccessModal({
   product,
   qty,
 }) {
-  // Jangan render apapun jika modal tidak terbuka atau tidak ada data produk
   if (!open || !product) return null;
 
   return (
@@ -56,9 +53,8 @@ export default function AddToCartSuccessModal({
             >
               Lanjut Belanja
             </button>
-            {/* UBAH DARI <Link> MENJADI <button> */}
             <button
-              onClick={onViewCart} // Panggil props onViewCart
+              onClick={onViewCart}
               className="w-full rounded-xl px-5 py-2 font-medium bg-[#394b2b] text-white hover:opacity-95"
             >
               Lihat Keranjang
